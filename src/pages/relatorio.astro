@@ -75,8 +75,6 @@ const dadosGraficos = {
 
 <Layout title="Relatórios - Nicopel" activeMenuItem="relatorio">
   
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <div class="report-container">
     
     <div class="report-header">
@@ -188,10 +186,8 @@ const dadosGraficos = {
   </div>
 
   <style>
-    /* Aumentei padding inferior da página */
     .report-container { max-width: 100%; margin: 0 auto; padding-bottom: 4rem; }
 
-    /* Margens do Header */
     .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; flex-wrap: wrap; gap: 1rem; }
     .report-header h1 { margin: 0; font-size: 1.6rem; color: #1A202C; font-weight: 800; }
     .report-header p { margin: 0.2rem 0 0; color: #64748B; font-size: 0.9rem; }
@@ -205,48 +201,21 @@ const dadosGraficos = {
 
     .empty-alert { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 2rem; border-radius: 12px; margin-bottom: 3rem; text-align: center; }
 
-    /* KPIs com GAP e MARGEM maiores */
-    .kpi-grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
-      gap: 2rem; /* Aumentado de 1.5 para 2 */
-      margin-bottom: 3rem; /* Aumentado de 2 para 3 */
-    }
+    /* KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
     .kpi-card { background: white; padding: 1.8rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1.2rem; border: 1px solid #E2E8F0; }
     .kpi-icon { width: 55px; height: 55px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
-    .kpi-icon.green { background: #E6FFF6; color: #00BA88; }
-    .kpi-icon.red { background: #FEF2F2; color: #EF4444; }
-    .kpi-icon.blue { background: #EFF6FF; color: #3B82F6; }
+    .kpi-icon.green { background: #E6FFF6; color: #00BA88; } .kpi-icon.red { background: #FEF2F2; color: #EF4444; } .kpi-icon.blue { background: #EFF6FF; color: #3B82F6; }
     .kpi-info span { font-size: 0.8rem; color: #64748B; font-weight: 700; text-transform: uppercase; }
     .kpi-info strong { font-size: 1.8rem; color: #1A202C; font-weight: 800; line-height: 1.1; }
 
-    /* GRÁFICOS com GAP e MARGEM maiores */
-    .charts-row { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 2rem; /* Mais espaço entre colunas */
-      margin-bottom: 3rem; /* Mais espaço entre linhas */
-    }
+    /* CHARTS */
+    .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
 
-    .chart-card { 
-      background: white; 
-      padding: 2rem; /* Mais espaço interno */
-      border-radius: 16px; 
-      border: 1px solid #E2E8F0; 
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
-      display: flex; 
-      flex-direction: column; 
-      min-width: 0; 
-      width: 100%;
-    }
-
+    .chart-card { background: white; padding: 2rem; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; min-width: 0; width: 100%; }
     .chart-card h3 { margin: 0 0 1.5rem 0; font-size: 1rem; color: #4A5568; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    .chart-wrapper { 
-      position: relative; 
-      height: 280px; /* Altura um pouco maior */
-      width: 100%; 
-    }
+    .chart-wrapper { position: relative; height: 280px; width: 100%; }
 
     /* Table */
     .table-card { padding: 0; overflow: hidden; }
@@ -254,31 +223,25 @@ const dadosGraficos = {
     .table-responsive { width: 100%; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; min-width: 400px; }
     th { background: #F8FAFC; color: #64748B; font-weight: 700; text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; }
-    td { padding: 1rem 1.5rem; border-top: 1px solid #F1F5F9; font-size: 0.9rem; color: #2D3748; }
+    td { padding: 1rem 1.5rem; border-top: 1px solid #F1F5F9; font-size: 0.85rem; color: #2D3748; }
     .fw-bold { font-weight: 600; }
     .empty-row { text-align: center; color: #94A3B8; padding: 3rem; }
     .btn-mini { background: #F1F5F9; color: #64748B; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.9rem; }
     .btn-mini:hover { background: #00BA88; color: white; }
 
-    @media(max-width: 600px) {
-      .charts-row { grid-template-columns: 1fr; gap: 1.5rem; }
-      .mobile-hide { display: none; }
-    }
-
-    @media print {
-      :global(aside) { display: none !important; }
-      :global(main) { margin: 0 !important; padding: 0 !important; }
-      .header-actions, .hide-print { display: none !important; }
-      .report-container { width: 100% !important; max-width: none !important; padding: 0 !important; }
-      .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; margin-bottom: 2rem; }
-      .charts-row { display: block !important; }
-    }
+    @media(max-width: 600px) { .charts-row { grid-template-columns: 1fr; gap: 1.5rem; } .mobile-hide { display: none; } }
+    @media print { :global(aside) { display: none !important; } :global(main) { margin: 0 !important; padding: 0 !important; } .header-actions, .hide-print { display: none !important; } .report-container { width: 100% !important; max-width: none !important; padding: 0 !important; } .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; margin-bottom: 2rem; } .charts-row { display: block !important; } }
   </style>
 
   <script define:vars={{ dadosGraficos, concorrentes }}>
-    const hasData = concorrentes.length > 0;
+    
+    // 1. Função que desenha os gráficos (só roda quando a lib existir)
+    function initCharts() {
+      console.log('Iniciando Gráficos...', typeof Chart);
+      
+      const hasData = concorrentes.length > 0;
+      if (!hasData) return;
 
-    if (hasData) {
       const commonOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -286,6 +249,7 @@ const dadosGraficos = {
         layout: { padding: 10 }
       };
 
+      // Segments
       const ctxSeg = document.getElementById('chartSegmentos');
       if (ctxSeg) {
         new Chart(ctxSeg, {
@@ -298,6 +262,7 @@ const dadosGraficos = {
         });
       }
 
+      // Threat
       const ctxAmeaca = document.getElementById('chartAmeaca');
       if (ctxAmeaca) {
         new Chart(ctxAmeaca, {
@@ -310,6 +275,7 @@ const dadosGraficos = {
         });
       }
 
+      // Region
       const ctxReg = document.getElementById('chartRegiao');
       if (ctxReg) {
         new Chart(ctxReg, {
@@ -323,6 +289,17 @@ const dadosGraficos = {
       }
     }
 
+    // 2. Carrega o Script dinamicamente e espera ele estar pronto
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+    script.async = true;
+    script.onload = () => {
+      // Quando o script carregar, roda a função
+      initCharts();
+    };
+    document.head.appendChild(script);
+
+    // Botões
     document.getElementById('btnPrint')?.addEventListener('click', () => window.print());
     document.getElementById('btnExport')?.addEventListener('click', () => {
       if (!concorrentes.length) return alert('Sem dados.');
