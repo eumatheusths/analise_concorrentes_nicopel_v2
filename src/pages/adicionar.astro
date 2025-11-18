@@ -1,0 +1,282 @@
+---
+// src/pages/adicionar.astro
+import Layout from '../layouts/Layout.astro';
+
+const opcoes = ["POTE E COPO", "SORVETE", "PIZZA", "INDUSTRIAL", "SACOLA", "BOBINA"];
+---
+
+<Layout title="Adicionar Concorrente" activeMenuItem="adicionar">
+  
+  <div class="form-wrapper">
+    
+    <div class="page-header-center">
+      <h2>Cadastrar Nova Empresa</h2>
+      <p>Adicione um concorrente ao banco de dados.</p>
+    </div>
+
+    <form id="formAdd" class="card-form">
+      
+      <div class="section-label">
+        <i class="fas fa-building"></i> Empresa
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label for="nome">Nome da Empresa</label>
+          <input type="text" id="nome" name="nome" required placeholder="EX: APOLO EMBALAGENS" style="text-transform: uppercase;" />
+        </div>
+        <div class="form-col">
+          <label for="seguimento">Segmento</label>
+          <input list="dlSeg" id="seguimento" name="seguimento" required placeholder="Selecione..." />
+          <datalist id="dlSeg">
+            {opcoes.map(o => <option value={o} />)}
+          </datalist>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label for="regiao">Cidade / Estado</label>
+          <input type="text" id="regiao" name="regiao" placeholder="EX: SÃO PAULO - SP" style="text-transform: uppercase;" />
+        </div>
+        <div class="form-col">
+          <label for="ameaca">Nível de Ameaça</label>
+          <div class="select-wrapper">
+            <select name="ameaca" id="ameaca" required>
+              <option value="BAIXA">Baixa</option>
+              <option value="MEDIA">Média</option>
+              <option value="ALTA">Alta</option>
+            </select>
+            <i class="fas fa-chevron-down select-icon"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col full">
+          <label for="site">Website</label>
+          <input type="url" id="site" name="site" placeholder="https://www.site.com.br" />
+        </div>
+      </div>
+
+      <div class="section-label mt-4">
+        <i class="fas fa-chart-line"></i> Comercial
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label for="instagram">Instagram (Link)</label>
+          <input type="url" id="instagram" name="instagram" placeholder="https://instagram.com/..." />
+        </div>
+        <div class="form-col">
+          <label for="ticket">Ticket Médio (R$)</label>
+          <input type="text" id="ticket" name="ticket" placeholder="1.500,00" />
+        </div>
+        <div class="form-col">
+          <label for="minimo">Pedido Mínimo</label>
+          <input type="text" id="minimo" name="minimo" placeholder="300kg" />
+        </div>
+      </div>
+
+      <div class="section-label mt-4">
+        <i class="fas fa-search-dollar"></i> Anúncios
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label for="safe_link_m">Biblioteca Meta Ads</label>
+          <input type="url" id="safe_link_m" name="safe_link_m" placeholder="Link da biblioteca..." />
+        </div>
+        <div class="form-col">
+          <label for="safe_link_g">Google Transparência</label>
+          <input type="url" id="safe_link_g" name="safe_link_g" placeholder="Link do Google..." />
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <span id="statusMessage"></span>
+        <button type="submit" id="btnSave">
+          <i class="fas fa-save"></i> Salvar Concorrente
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <style>
+    .form-wrapper { max-width: 900px; margin: 0 auto; }
+    
+    .page-header-center { text-align: center; margin-bottom: 2rem; }
+    .page-header-center h2 { margin: 0; font-size: 1.8rem; color: #1A202C; font-weight: 800; }
+    .page-header-center p { color: #718096; margin-top: 0.5rem; }
+
+    .card-form {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 16px;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+
+    /* FLEXBOX LAYOUT */
+    .form-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .form-col {
+      flex: 1;
+      min-width: 250px; /* Garante que não esmague */
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .form-col.full { flex: 100%; }
+
+    /* Section Labels */
+    .section-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #00BA88;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 2px solid #F1F5F9;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .mt-4 { margin-top: 2.5rem; }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #4A5568;
+      text-transform: uppercase;
+    }
+
+    /* Inputs mais fortes */
+    input, select {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 2px solid #CBD5E1; /* Borda cinza mais escura */
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      color: #2D3748;
+      background: #F8FAFC;
+      transition: all 0.2s ease;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    input:focus, select:focus {
+      border-color: #00BA88;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(0, 186, 136, 0.15);
+    }
+    
+    input::placeholder { color: #94A3B8; }
+
+    /* Select Icon */
+    .select-wrapper { position: relative; }
+    .select-icon {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748B;
+      pointer-events: none;
+      font-size: 0.8rem;
+    }
+    select { appearance: none; cursor: pointer; }
+
+    /* Footer Actions */
+    .form-footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #btnSave {
+      background: #00BA88;
+      color: white;
+      border: none;
+      padding: 1rem 2.5rem;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: 0.2s;
+      box-shadow: 0 4px 15px rgba(0, 186, 136, 0.3);
+    }
+    #btnSave:hover { background: #00966D; transform: translateY(-2px); }
+    #btnSave:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    #statusMessage { font-weight: 700; font-size: 0.9rem; }
+    .msg-success { color: #00BA88; }
+    .msg-error { color: #E53E3E; }
+
+    /* Mobile Adjustments */
+    @media (max-width: 768px) {
+      .card-form { padding: 1.5rem; }
+      .form-row { gap: 1rem; }
+    }
+  </style>
+
+  <script is:inline>
+    const form = document.getElementById('formAdd');
+    const btn = document.getElementById('btnSave');
+    const msg = document.getElementById('statusMessage');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Salvando...';
+      msg.innerText = '';
+
+      const formData = new FormData(form);
+      const rawData = Object.fromEntries(formData.entries());
+
+      // Mapeia os nomes "seguros" de volta para o que a API espera
+      const payload = {
+        ...rawData,
+        meta_ads: rawData.safe_link_m,  // Converte de volta
+        google_ads: rawData.safe_link_g // Converte de volta
+      };
+
+      try {
+        const r = await fetch('/api/adicionar.json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (r.ok) {
+          msg.innerText = '✅ Registro salvo com sucesso!';
+          msg.className = 'msg-success';
+          form.reset();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          throw new Error('Erro na API');
+        }
+      } catch (err) {
+        msg.innerText = '❌ Erro ao salvar. Verifique a conexão.';
+        msg.className = 'msg-error';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Salvar Concorrente';
+        setTimeout(() => { msg.innerText = ''; }, 5000);
+      }
+    });
+  </script>
+</Layout>

@@ -1,0 +1,180 @@
+---
+// src/layouts/Layout.astro
+export interface Props {
+  title: string;
+  activeMenuItem?: 'dashboard' | 'adicionar' | 'relatorio' | 'configuracoes';
+}
+const { title, activeMenuItem } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <style>
+    :root {
+      --bg-body: #EEF2F6;
+      --bg-surface: #FFFFFF;
+      --primary: #00BA88;
+      --primary-hover: #00966D;
+      --text-main: #1A202C;
+      --text-muted: #64748B;
+      --border: #CBD5E1;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      --radius: 16px;
+      --sidebar-width: 280px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* --- SIDEBAR --- */
+    aside {
+      width: var(--sidebar-width);
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      z-index: 100;
+      padding: 2rem 1.5rem;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    /* --- MAIN CONTENT --- */
+    main {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 2rem 3rem;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      transition: margin-left 0.3s ease-in-out;
+    }
+
+    /* --- MOBILE RESPONSIVIDADE --- */
+    @media (max-width: 1024px) {
+      aside {
+        transform: translateX(-100%);
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      }
+      aside.open { transform: translateX(0); }
+      main { margin-left: 0; padding: 1.5rem; }
+      .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 90; }
+      .overlay.active { display: block; }
+      .mobile-nav-btn { display: flex !important; }
+    }
+
+    /* --- ESTILOS GERAIS --- */
+    .brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 3rem; }
+    .brand-icon { width: 42px; height: 42px; background: var(--primary); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .brand-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .brand-subtitle { font-size: 1.1rem; font-weight: 800; color: var(--text-main); }
+    .menu-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 1rem; padding-left: 0.5rem; }
+    nav { display: flex; flex-direction: column; gap: 0.5rem; }
+    .nav-link { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1rem; color: var(--text-muted); text-decoration: none; font-weight: 600; border-radius: 12px; transition: 0.2s; }
+    .nav-link:hover { background: var(--bg-body); color: var(--primary); }
+    .nav-link.active { background: var(--primary); color: white; }
+    .nav-link.active i { color: white; }
+
+    .top-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .mobile-nav-btn { display: none; background: white; border: 1px solid var(--border); padding: 0.8rem; border-radius: 12px; color: var(--text-main); cursor: pointer; font-size: 1.2rem; }
+    
+    .search-wrapper { position: relative; width: 100%; }
+    .search-wrapper input { width: 100%; padding: 1rem 1rem 1rem 3rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.95rem; color: var(--text-main); box-shadow: var(--shadow); outline: none; }
+    .search-wrapper input:focus { border-color: var(--primary); }
+    .search-wrapper i { position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .content-wrapper { flex: 1; }
+  </style>
+</head>
+<body>
+
+  <div id="overlay" class="overlay"></div>
+
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">N</div>
+      <div class="brand-text">
+        <span class="brand-title">Inteligência</span>
+        <span class="brand-subtitle">Nicopel</span>
+      </div>
+    </div>
+
+    <div class="menu-title">Menu Principal</div>
+    <nav>
+      <a href="/" class={`nav-link ${activeMenuItem === 'dashboard' ? 'active' : ''}`}>
+        <i class="fas fa-th-large"></i> Visão Geral
+      </a>
+      <a href="/adicionar" class={`nav-link ${activeMenuItem === 'adicionar' ? 'active' : ''}`}>
+        <i class="fas fa-plus-circle"></i> Adicionar Empresa
+      </a>
+      <a href="/relatorio" class={`nav-link ${activeMenuItem === 'relatorio' ? 'active' : ''}`}>
+        <i class="fas fa-chart-pie"></i> Relatórios
+      </a>
+      <!-- BOTÃO NOVO ADICIONADO AQUI -->
+      <a href="/editar" class={`nav-link ${activeMenuItem === 'configuracoes' ? 'active' : ''}`}>
+        <i class="fas fa-edit"></i> Gerenciar Dados
+      </a>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="top-header">
+      <button id="menuBtn" class="mobile-nav-btn">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="globalSearch" placeholder="Pesquisar..." />
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+      <slot />
+    </div>
+  </main>
+
+  <script is:inline>
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    function toggleMenu() {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    }
+
+    if (menuBtn && sidebar && overlay) {
+      menuBtn.addEventListener('click', toggleMenu);
+      overlay.addEventListener('click', toggleMenu);
+    }
+
+    const searchInput = document.getElementById('globalSearch');
+    if(searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        window.dispatchEvent(new CustomEvent('global-search', { detail: e.target.value }));
+      });
+    }
+  </script>
+</body>
+</html>

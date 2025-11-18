@@ -1,0 +1,323 @@
+---
+// src/pages/relatorio.astro
+import Layout from '../layouts/Layout.astro';
+
+// 1. DEFINIÇÃO DE TIPOS
+interface Concorrente {
+  nome: string;
+  seguimento: string;
+  regiao: string;
+  site: string;
+  instagram: string;
+  meta_ads: string;
+  google_ads: string;
+  ticket_medio: string;
+  pedido_minimo: string;
+  ameaca: string;
+}
+
+type Contador = Record<string, number>;
+
+// 2. Busca os dados no servidor
+let concorrentes: Concorrente[] = [];
+
+try {
+  const response = await fetch(new URL('/api/concorrentes.json', Astro.url));
+  const json = await response.json();
+  concorrentes = json.data || [];
+} catch (e) {
+  console.error("Erro ao carregar dados", e);
+}
+
+// 3. Processamento de Dados
+const total = concorrentes.length;
+const totalAltaAmeaca = concorrentes.filter((c: Concorrente) => c.ameaca === 'ALTA').length;
+const totalComAds = concorrentes.filter((c: Concorrente) => c.meta_ads || c.google_ads).length;
+
+const porSegmento = concorrentes.reduce((acc: Contador, curr: Concorrente) => {
+  const seg = curr.seguimento || 'Outros';
+  acc[seg] = (acc[seg] || 0) + 1;
+  return acc;
+}, {});
+
+const porAmeaca = {
+  'ALTA': concorrentes.filter((c: Concorrente) => c.ameaca === 'ALTA').length,
+  'MEDIA': concorrentes.filter((c: Concorrente) => c.ameaca === 'MEDIA').length,
+  'BAIXA': concorrentes.filter((c: Concorrente) => (c.ameaca === 'BAIXA' || !c.ameaca)).length,
+};
+
+const porRegiaoAll = concorrentes.reduce((acc: Contador, curr: Concorrente) => {
+  const reg = curr.regiao || 'Não Inf.';
+  acc[reg] = (acc[reg] || 0) + 1;
+  return acc;
+}, {});
+
+const porRegiao = Object.entries(porRegiaoAll)
+  .sort(([, a], [, b]) => (b as number) - (a as number))
+  .slice(0, 5)
+  .reduce((r: Contador, [k, v]) => ({ ...r, [k]: v as number }), {});
+
+const listaAltaAmeaca = concorrentes.filter((c: Concorrente) => c.ameaca === 'ALTA');
+
+const dadosGraficos = {
+  segmentos: { labels: Object.keys(porSegmento), data: Object.values(porSegmento) },
+  ameaca: { labels: Object.keys(porAmeaca), data: Object.values(porAmeaca) },
+  regiao: { labels: Object.keys(porRegiao), data: Object.values(porRegiao) }
+};
+---
+
+<Layout title="Relatórios - Nicopel" activeMenuItem="relatorio">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <div class="report-container">
+    
+    <div class="report-header">
+      <div>
+        <h1>Inteligência de Mercado</h1>
+        <p>Análise estatística da base de concorrentes.</p>
+      </div>
+      
+      <div class="header-actions">
+        <button id="btnPrint" class="btn-action btn-print">
+          <i class="fas fa-print"></i> Imprimir
+        </button>
+        
+        <button id="btnExport" class="btn-action btn-export">
+          <i class="fas fa-file-download"></i> CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon green"><i class="fas fa-building"></i></div>
+        <div class="kpi-info">
+          <span>Total Empresas</span>
+          <strong>{total}</strong>
+        </div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="kpi-info">
+          <span>Ameaça Alta</span>
+          <strong>{totalAltaAmeaca}</strong>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon blue"><i class="fas fa-ad"></i></div>
+        <div class="kpi-info">
+          <span>Monitorando Ads</span>
+          <strong>{totalComAds}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card large">
+        <h3>Distribuição por Segmento</h3>
+        <div class="chart-wrapper">
+          <canvas id="chartSegmentos"></canvas>
+        </div>
+      </div>
+      <div class="chart-card small">
+        <h3>Nível de Ameaça</h3>
+        <div class="chart-wrapper">
+          <canvas id="chartAmeaca"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Top 5 Regiões</h3>
+        <div class="chart-wrapper">
+          <canvas id="chartRegiao"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card table-card">
+        <h3>⚠️ Radar de Alta Ameaça</h3>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Cidade</th>
+                <th class="hide-print">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {listaAltaAmeaca.length === 0 ? (
+                <tr><td colspan="3" style="text-align:center; color:#888; padding: 1rem;">Nenhuma ameaça alta detectada.</td></tr>
+              ) : (
+                listaAltaAmeaca.map((c: Concorrente) => (
+                  <tr>
+                    <td style="font-weight: 700; color: #1A202C;">{c.nome}</td>
+                    <td style="font-size: 0.9rem; color: #64748B;">{c.regiao}</td>
+                    <td class="hide-print">
+                      <a href={c.site || '#'} target="_blank" class="btn-mini"><i class="fas fa-external-link-alt"></i></a>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <style>
+
+    /* Charts Layout */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    
+    /* --- RESPONSIVIDADE --- */
+    @media(max-width: 900px) { 
+      .charts-row { grid-template-columns: 1fr; } /* Vira 1 coluna */
+      .chart-card.large, .chart-card.small { flex: 1; } 
+    }
+
+    /* Table Responsive */
+    .table-responsive { width: 100%; overflow-x: auto; } /* Scroll na tabela */
+    .report-container { max-width: 1200px; margin: 0 auto; }
+
+    .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .report-header h1 { margin: 0; font-size: 1.8rem; color: #1A202C; font-weight: 800; }
+    .report-header p { margin: 0.5rem 0 0; color: #64748B; }
+
+    .header-actions { display: flex; gap: 0.8rem; }
+
+    .btn-action { padding: 0.7rem 1.2rem; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; font-size: 0.9rem; }
+    
+    .btn-export { background: white; border: 1px solid #CBD5E1; color: #1A202C; }
+    .btn-export:hover { background: #F8FAFC; border-color: #00BA88; color: #00BA88; }
+
+    .btn-print { background: #1A202C; border: 1px solid #1A202C; color: white; }
+    .btn-print:hover { background: #2D3748; }
+
+    /* KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .kpi-card { background: white; padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1rem; border: 1px solid #E2E8F0; }
+    .kpi-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .kpi-icon.green { background: #E6FFF6; color: #00BA88; }
+    .kpi-icon.red { background: #FEF2F2; color: #EF4444; }
+    .kpi-icon.blue { background: #EFF6FF; color: #3B82F6; }
+    .kpi-info { display: flex; flex-direction: column; }
+    .kpi-info span { font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase; }
+    .kpi-info strong { font-size: 1.5rem; color: #1A202C; font-weight: 800; line-height: 1.2; }
+
+    /* Charts */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    @media(max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+
+    .chart-card { background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+    .chart-card.large { flex: 2; }
+    .chart-card.small { flex: 1; }
+    .chart-card h3 { margin: 0 0 1.5rem 0; font-size: 1rem; color: #4A5568; font-weight: 700; text-transform: uppercase; }
+    .chart-wrapper { position: relative; height: 300px; width: 100%; display: flex; justify-content: center; }
+
+    /* Table */
+    .table-card { padding: 0; overflow: hidden; }
+    .table-card h3 { padding: 1.5rem 1.5rem 0.5rem 1.5rem; margin-bottom: 0.5rem; }
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #F8FAFC; color: #64748B; font-weight: 700; text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; }
+    td { padding: 1rem 1.5rem; border-top: 1px solid #F1F5F9; font-size: 0.9rem; }
+    tr:hover td { background: #FAFAFA; }
+    .btn-mini { background: #F1F5F9; color: #64748B; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.2s; }
+
+    /* --- ESTILOS DE IMPRESSÃO (A MÁGICA ACONTECE AQUI) --- */
+    @media print {
+      /* Esconde a Sidebar do Layout Pai */
+      :global(aside) { display: none !important; }
+      
+      /* Ajusta a margem do main para ocupar a folha toda */
+      :global(main) { margin-left: 0 !important; padding: 0 !important; }
+      :global(body) { background-color: white !important; }
+
+      /* Esconde botões e coisas desnecessárias */
+      .header-actions, .hide-print { display: none !important; }
+      
+      /* Ajusta container */
+      .report-container { max-width: 100% !important; padding: 20px !important; }
+      
+      /* Garante cores de fundo (para os gráficos e kpis) */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* Layout limpo para papel */
+      .kpi-card, .chart-card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+      
+      /* Gráficos lado a lado */
+      .charts-row { display: flex !important; gap: 1rem; }
+    }
+  </style>
+
+  <script define:vars={{ dadosGraficos, concorrentes }}>
+    // Função Imprimir
+    document.getElementById('btnPrint').addEventListener('click', () => {
+      window.print();
+    });
+
+    // Gráficos
+    const ctxSeg = document.getElementById('chartSegmentos');
+    if (ctxSeg) {
+      new Chart(ctxSeg, {
+        type: 'bar',
+        data: {
+          labels: dadosGraficos.segmentos.labels,
+          datasets: [{ label: 'Empresas', data: dadosGraficos.segmentos.data, backgroundColor: '#00BA88', borderRadius: 6, barPercentage: 0.6 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }
+      });
+    }
+
+    const ctxAmeaca = document.getElementById('chartAmeaca');
+    if (ctxAmeaca) {
+      new Chart(ctxAmeaca, {
+        type: 'doughnut',
+        data: {
+          labels: dadosGraficos.ameaca.labels,
+          datasets: [{ data: dadosGraficos.ameaca.data, backgroundColor: ['#EF4444', '#F59E0B', '#10B981'], borderWidth: 0, hoverOffset: 4 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } } }
+      });
+    }
+
+    const ctxReg = document.getElementById('chartRegiao');
+    if (ctxReg) {
+      new Chart(ctxReg, {
+        type: 'bar',
+        data: {
+          labels: dadosGraficos.regiao.labels,
+          datasets: [{ label: 'Quantidade', data: dadosGraficos.regiao.data, backgroundColor: '#3B82F6', borderRadius: 6, barPercentage: 0.5 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [5, 5] } }, x: { grid: { display: false } } } }
+      });
+    }
+
+    // Exportar CSV
+    const btnExport = document.getElementById('btnExport');
+    if (btnExport) {
+      btnExport.addEventListener('click', () => {
+        if (!concorrentes || concorrentes.length === 0) return alert('Sem dados.');
+        const headers = ["Nome", "Segmento", "Região", "Site", "Ameaça", "Ticket"];
+        const rows = concorrentes.map(c => [`"${c.nome}"`, `"${c.seguimento}"`, `"${c.regiao}"`, c.site, c.ameaca, c.ticket_medio]);
+        const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.join("\n");
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute("download", "relatorio.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }
+  </script>
+</Layout>
