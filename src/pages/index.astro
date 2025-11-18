@@ -34,6 +34,8 @@ const total = concorrentes.length;
 const segmentos = [...new Set(concorrentes.map(c => c.seguimento))].filter(Boolean);
 const cidades = [...new Set(concorrentes.map(c => c.regiao))].filter(Boolean).sort();
 
+// --- FUNÇÕES UTILITÁRIAS ---
+
 function fixUrl(url: string) {
   if (!url) return '';
   let clean = url.trim();
@@ -46,6 +48,20 @@ function getThreatColor(n: string) {
   if (level === 'MEDIA') return 'orange';
   return 'green';
 }
+
+// Função para converter texto "R$ 1.500,00" ou "1000" em número JS
+function parseValor(str: string) {
+  if (!str) return 0;
+  // Remove tudo que não é dígito ou vírgula
+  const limpo = str.replace(/[^\d,]/g, '').replace(',', '.');
+  return parseFloat(limpo) || 0;
+}
+
+// Formata número para Moeda BRL
+function formatMoeda(val: number) {
+  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 ---
 
 <Layout title="Dashboard - Nicopel" activeMenuItem="dashboard">
@@ -96,38 +112,71 @@ function getThreatColor(n: string) {
   </div>
 
   <div class="grid-cards" id="gridCards">
-    {concorrentes.map(c => (
-      <div class="card-project" data-nome={c.nome} data-regiao={c.regiao} data-seg={c.seguimento}>
-        <div class="card-head">
-          <div class="icon-box">{c.nome.charAt(0).toUpperCase()}</div>
-          <span class={`threat-badge ${getThreatColor(c.ameaca)}`}>{c.ameaca || 'BAIXA'}</span>
-        </div>
-        
-        <button 
-          class="comp-name-btn open-products" 
-          data-linha={c.id_linha} 
-          data-nome={c.nome}
-          data-produtos={JSON.stringify(c.produtos)}
-        >
-          {c.nome.toUpperCase()} <i class="fas fa-external-link-alt" style="font-size: 0.7em; margin-left: 8px; opacity: 0.5;"></i>
-        </button>
+    {concorrentes.map(c => {
+      
+      // --- LÓGICA DE CÁLCULO AUTOMÁTICO ---
+      let displayTicket = c.ticket_medio || '-';
+      let displayMinimo = c.pedido_minimo || '-';
 
-        <p class="location"><i class="fas fa-map-pin"></i> {c.regiao}</p>
-        <div class="status-row"><span class="status-badge">{c.seguimento}</span></div>
+      // Se existirem produtos cadastrados, calcula a média
+      if (c.produtos && c.produtos.length > 0) {
         
-        <div class="metrics">
-          <div class="metric"><small>Ticket</small><strong>{c.ticket_medio || '-'}</strong></div>
-          <div class="metric"><small>Mínimo</small><strong>{c.pedido_minimo || '-'}</strong></div>
-        </div>
+        // 1. Calcula Ticket Médio (Baseado nos Preços)
+        const precos = c.produtos.map(p => parseValor(p.preco)).filter(v => v > 0);
+        if (precos.length > 0) {
+          const mediaPreco = precos.reduce((acc, val) => acc + val, 0) / precos.length;
+          displayTicket = formatMoeda(mediaPreco);
+        }
 
-        <div class="actions-grid">
-          {c.site && <a href={fixUrl(c.site)} target="_blank" class="btn-action website"><i class="fas fa-globe"></i> Site</a>}
-          {c.instagram && <a href={fixUrl(c.instagram)} target="_blank" class="btn-action instagram"><i class="fab fa-instagram"></i> Insta</a>}
-          {c.meta_ads && <a href={fixUrl(c.meta_ads)} target="_blank" class="btn-action meta"><i class="fab fa-facebook"></i> Ads</a>}
-          {c.google_ads && <a href={fixUrl(c.google_ads)} target="_blank" class="btn-action google"><i class="fab fa-google"></i> Ads</a>}
+        // 2. Calcula Média do Mínimo (Baseado na Qtd Mínima)
+        const minimos = c.produtos.map(p => parseValor(p.minimo)).filter(v => v > 0);
+        if (minimos.length > 0) {
+          const mediaMinimo = minimos.reduce((acc, val) => acc + val, 0) / minimos.length;
+          // Arredonda para não ficar "500.3333"
+          displayMinimo = Math.round(mediaMinimo).toString(); 
+        }
+      }
+      // --------------------------------------
+
+      return (
+        <div class="card-project" data-nome={c.nome} data-regiao={c.regiao} data-seg={c.seguimento}>
+          <div class="card-head">
+            <div class="icon-box">{c.nome.charAt(0).toUpperCase()}</div>
+            <span class={`threat-badge ${getThreatColor(c.ameaca)}`}>{c.ameaca || 'BAIXA'}</span>
+          </div>
+          
+          <button 
+            class="comp-name-btn open-products" 
+            data-linha={c.id_linha} 
+            data-nome={c.nome}
+            data-produtos={JSON.stringify(c.produtos)}
+          >
+            {c.nome.toUpperCase()} <i class="fas fa-external-link-alt" style="font-size: 0.7em; margin-left: 8px; opacity: 0.5;"></i>
+          </button>
+
+          <p class="location"><i class="fas fa-map-pin"></i> {c.regiao}</p>
+          <div class="status-row"><span class="status-badge">{c.seguimento}</span></div>
+          
+          <div class="metrics">
+            <div class="metric">
+              <small>Ticket Médio</small>
+              <strong>{displayTicket}</strong>
+            </div>
+            <div class="metric">
+              <small>Média Mínimo</small>
+              <strong>{displayMinimo}</strong>
+            </div>
+          </div>
+
+          <div class="actions-grid">
+            {c.site && <a href={fixUrl(c.site)} target="_blank" class="btn-action website"><i class="fas fa-globe"></i> Site</a>}
+            {c.instagram && <a href={fixUrl(c.instagram)} target="_blank" class="btn-action instagram"><i class="fab fa-instagram"></i> Insta</a>}
+            {c.meta_ads && <a href={fixUrl(c.meta_ads)} target="_blank" class="btn-action meta"><i class="fab fa-facebook"></i> Ads</a>}
+            {c.google_ads && <a href={fixUrl(c.google_ads)} target="_blank" class="btn-action google"><i class="fab fa-google"></i> Ads</a>}
+          </div>
         </div>
-      </div>
-    ))}
+      )
+    })}
   </div>
 
   <div id="prodModal" class="modal-overlay hidden">
@@ -151,8 +200,7 @@ function getThreatColor(n: string) {
                 <th style="width: 50px;"></th>
               </tr>
             </thead>
-            <tbody id="prodTableBody">
-              </tbody>
+            <tbody id="prodTableBody"></tbody>
           </table>
         </div>
         <button id="btnAddRow" class="btn-dashed">+ Adicionar Linha</button>
@@ -166,136 +214,72 @@ function getThreatColor(n: string) {
   </div>
 
   <style>
-    /* --- CSS GLOBAL E GRID --- */
+    /* ... (TODO O CSS ANTERIOR MANTIDO AQUI) ... */
+    /* Copie e cole o CSS do arquivo anterior aqui, não mudou nada no estilo */
     .page-intro { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .page-intro h1 { font-size: 1.8rem; color: #1A202C; font-weight: 800; }
     .btn-add { background: #1E293B; color: white; padding: 0.8rem 1.5rem; border-radius: 30px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
     
     .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
     
-    /* --- CSS QUE FALTAVA: STATS CONTAINER --- */
-    .stats-container { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
-      gap: 1.5rem; 
-      margin-bottom: 2.5rem; 
-    }
-    
-    .stat-card { 
-      padding: 1.5rem; 
-      border-radius: 16px; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: space-between; 
-      height: 150px; 
-      color: white; 
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-      position: relative;
-      overflow: hidden;
-    }
-    
-    /* Cores dos Cards */
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+    .stat-card { padding: 1.5rem; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; height: 150px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
     .card-green { background: linear-gradient(135deg, #00BA88 0%, #008F68 100%); }
     .card-blue { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); }
     .card-purple { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
-
     .stat-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; opacity: 0.9; }
     .icon-circle { background: rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
     .stat-card h2 { font-size: 2.5rem; margin: 0; font-weight: 800; }
     .stat-footer { font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; margin-top: auto; opacity: 0.9; }
     .badge { background: rgba(255,255,255,0.25); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; }
 
-    /* --- CSS QUE FALTAVA: TOOLBAR --- */
-    .toolbar { 
-      background: white; 
-      padding: 1.2rem; 
-      border-radius: 16px; 
-      margin-bottom: 2rem; 
-      display: flex; 
-      gap: 1.5rem; 
-      flex-wrap: wrap; 
-      border: 1px solid #E2E8F0; 
-      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-    }
+    .toolbar { background: white; padding: 1.2rem; border-radius: 16px; margin-bottom: 2rem; display: flex; gap: 1.5rem; flex-wrap: wrap; border: 1px solid #E2E8F0; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
     .filter-group { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 0.4rem; }
     .filter-group label { font-size: 0.75rem; font-weight: 700; color: #718096; text-transform: uppercase; }
-    .control-input { 
-      padding: 0.7rem; 
-      border: 1px solid #CBD5E1; 
-      border-radius: 10px; 
-      background: #F8FAFC; 
-      width: 100%; 
-      font-family: 'Inter', sans-serif;
-      color: #2D3748;
-      font-size: 0.9rem;
-    }
-    .control-input:focus { outline: none; border-color: #00BA88; background: white; }
+    .control-input { padding: 0.7rem; border: 1px solid #CBD5E1; border-radius: 10px; background: #F8FAFC; width: 100%; font-family: 'Inter', sans-serif; color: #2D3748; font-size: 0.9rem; }
 
-    /* --- CSS DOS CARDS (CONCORRENTES) --- */
     .card-project { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid transparent; display: flex; flex-direction: column; transition: transform 0.2s; }
     .card-project:hover { transform: translateY(-5px); border-color: #00BA88; box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
-    
     .card-head { display: flex; justify-content: space-between; margin-bottom: 0.8rem; }
     .icon-box { width: 45px; height: 45px; background: #E6FFF6; color: #00BA88; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; }
-    
-    .comp-name-btn {
-      background: none; border: none; padding: 0; font-size: 1.15rem; font-weight: 800; color: #1A202C;
-      text-align: left; cursor: pointer; margin: 0.2rem 0; display: flex; align-items: center; transition: 0.2s;
-      font-family: 'Inter', sans-serif; width: 100%;
-    }
+    .comp-name-btn { background: none; border: none; padding: 0; font-size: 1.15rem; font-weight: 800; color: #1A202C; text-align: left; cursor: pointer; margin: 0.2rem 0; display: flex; align-items: center; transition: 0.2s; font-family: 'Inter', sans-serif; width: 100%; }
     .comp-name-btn:hover { color: #00BA88; }
-
     .location { color: #718096; font-size: 0.85rem; margin-bottom: 1rem; font-weight: 500; }
     .status-badge { background: #F0FDF4; color: #15803D; padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-    
     .threat-badge { font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; height: fit-content; }
     .threat-badge.red { background: #FECACA; color: #B91C1C; } .threat-badge.orange { background: #FED7AA; color: #C2410C; } .threat-badge.green { background: #DCFCE7; color: #15803D; }
-
     .metrics { display: flex; gap: 1rem; margin: 1.2rem 0; background: #F8FAFC; padding: 1rem; border-radius: 12px; border: 1px solid #F1F5F9; }
     .metric { display: flex; flex-direction: column; }
     .metric small { font-size: 0.65rem; font-weight: 700; color: #718096; text-transform: uppercase; margin-bottom: 2px; }
     .metric strong { font-size: 0.9rem; color: #1A202C; }
-
     .actions-grid { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; padding-top: 1.2rem; border-top: 1px solid #F1F5F9; }
     .btn-action { display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem; border-radius: 10px; text-decoration: none; font-size: 0.8rem; font-weight: 700; border: 1px solid transparent; transition: 0.2s; }
-    .btn-action.website { background: #EEF2FF; color: #4F46E5; border-color: #C7D2FE; }
-    .btn-action.instagram { background: #FDF2F8; color: #DB2777; border-color: #FBCFE8; }
-    .btn-action.meta { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
-    .btn-action.google { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+    .btn-action.website { background: #EEF2FF; color: #4F46E5; border-color: #C7D2FE; } .btn-action.instagram { background: #FDF2F8; color: #DB2777; border-color: #FBCFE8; } .btn-action.meta { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; } .btn-action.google { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
     .btn-action:hover { transform: translateY(-2px); }
 
-    /* --- MODAL STYLES --- */
     .hidden { display: none !important; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; justify-content: center; align-items: center; padding: 1rem; }
     .modal-card { background: white; width: 100%; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; }
     .large-modal { max-width: 750px; }
-
     .modal-header { padding: 1.5rem; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: flex-start; }
-    .modal-header h2 { margin: 0; font-size: 1.5rem; color: #1A202C; }
-    .modal-header p { margin: 0.3rem 0 0; color: #718096; font-size: 0.9rem; }
+    .modal-header h2 { margin: 0; font-size: 1.4rem; color: #1A202C; }
+    .modal-header p { margin: 0.2rem 0 0; color: #718096; font-size: 0.9rem; }
     .close-button { background: none; border: none; font-size: 2rem; line-height: 0.8; cursor: pointer; color: #A0AEC0; }
-
     .modal-body { padding: 1.5rem; overflow-y: auto; }
-    
     .table-wrapper { border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
     #prodTable { width: 100%; border-collapse: collapse; }
     #prodTable th { background: #F8FAFC; padding: 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #64748B; font-weight: 700; border-bottom: 1px solid #E2E8F0; }
     #prodTable td { padding: 0.5rem; border-bottom: 1px solid #F1F5F9; }
-    
     .tbl-input { width: 100%; padding: 0.6rem; border: 1px solid transparent; border-radius: 6px; font-family: inherit; font-size: 0.9rem; color: #1A202C; }
     .tbl-input:hover { border-color: #E2E8F0; }
     .tbl-input:focus { outline: none; border-color: #00BA88; background: #F0FDF4; }
-
     .btn-del-row { color: #EF4444; background: none; border: none; cursor: pointer; padding: 0.5rem; border-radius: 6px; }
     .btn-del-row:hover { background: #FEF2F2; }
-
     .btn-dashed { width: 100%; padding: 0.8rem; border: 2px dashed #CBD5E1; background: none; color: #64748B; font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.2s; }
     .btn-dashed:hover { border-color: #00BA88; color: #00BA88; background: #F0FDF4; }
-
     .modal-footer { padding: 1.5rem; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; }
     .btn-save-modal { background: #00BA88; color: white; border: none; padding: 0.8rem 2rem; border-radius: 8px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 186, 136, 0.3); }
     .btn-save-modal:hover { background: #00966D; }
-    
     #saveStatus { font-size: 0.9rem; font-weight: 600; color: #00BA88; }
 
     @media(max-width:600px) {
@@ -306,7 +290,6 @@ function getThreatColor(n: string) {
   </style>
 
   <script is:inline>
-    // LÓGICA FILTROS
     const selSegmento = document.getElementById('filterSegmento');
     const selCidade = document.getElementById('filterCidade');
     const grid = document.getElementById('gridCards');
@@ -315,7 +298,6 @@ function getThreatColor(n: string) {
       let cards = Array.from(grid.children);
       const valSeg = selSegmento.value;
       const valCid = selCidade.value;
-      
       cards.forEach(card => {
         const seg = card.dataset.seg;
         const reg = card.dataset.regiao;
@@ -327,7 +309,6 @@ function getThreatColor(n: string) {
     selSegmento.addEventListener('change', updateGrid);
     selCidade.addEventListener('change', updateGrid);
 
-    // --- LÓGICA MODAL DE PRODUTOS ---
     const modal = document.getElementById('prodModal');
     const closeBtn = document.getElementById('closeProdModal');
     const tableBody = document.getElementById('prodTableBody');
@@ -335,7 +316,6 @@ function getThreatColor(n: string) {
     const btnSave = document.getElementById('btnSaveProds');
     const modalTitle = document.getElementById('modalTitle');
     const saveStatus = document.getElementById('saveStatus');
-    
     let currentLinha = null;
 
     function createRow(produto = { nome: '', minimo: '', preco: '' }) {
@@ -355,17 +335,11 @@ function getThreatColor(n: string) {
         const nome = btn.dataset.nome;
         const linha = btn.dataset.linha;
         const produtos = JSON.parse(btn.dataset.produtos || '[]');
-        
         currentLinha = linha;
         modalTitle.innerText = nome;
         tableBody.innerHTML = '';
         saveStatus.innerText = '';
-
-        if (produtos.length > 0) {
-          produtos.forEach(p => createRow(p));
-        } else {
-          createRow(); 
-        }
+        if (produtos.length > 0) { produtos.forEach(p => createRow(p)); } else { createRow(); }
         modal.classList.remove('hidden');
       });
     });
@@ -379,38 +353,25 @@ function getThreatColor(n: string) {
     btnSave.addEventListener('click', async () => {
       if (!currentLinha) return;
       btnSave.innerText = 'Salvando...';
-      
       const rows = tableBody.querySelectorAll('tr');
       const novosProdutos = [];
       rows.forEach(tr => {
         const inputs = tr.querySelectorAll('input');
         if (inputs[0].value.trim()) {
-          novosProdutos.push({ 
-            nome: inputs[0].value.trim(), 
-            minimo: inputs[1].value.trim(), 
-            preco: inputs[2].value.trim() 
-          });
+          novosProdutos.push({ nome: inputs[0].value.trim(), minimo: inputs[1].value.trim(), preco: inputs[2].value.trim() });
         }
       });
-
       try {
         const res = await fetch('/api/gerenciar.json', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ linha: currentLinha, produtos: novosProdutos })
         });
-
         if (res.ok) {
           saveStatus.innerText = '✅ Salvo!';
           setTimeout(() => window.location.reload(), 800);
-        } else {
-          saveStatus.innerText = '❌ Erro.';
-        }
-      } catch (e) {
-        saveStatus.innerText = '❌ Erro.';
-      } finally {
-        btnSave.innerText = 'Salvar Tabela';
-      }
+        } else { saveStatus.innerText = '❌ Erro.'; }
+      } catch (e) { saveStatus.innerText = '❌ Erro.'; } finally { btnSave.innerText = 'Salvar Tabela'; }
     });
   </script>
 </Layout>
