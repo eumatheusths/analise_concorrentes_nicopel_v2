@@ -53,7 +53,7 @@ function getThreatColor(n: string) {
   <div class="page-intro">
     <div>
       <h1>Visão de Mercado</h1>
-      <p>Clique no nome da empresa para ver/editar a tabela de produtos.</p>
+      <p>Clique no nome da empresa para ver/editar os produtos.</p>
     </div>
     <div class="actions">
       <a href="/adicionar" class="btn-add"><i class="fas fa-plus"></i> <span class="mobile-hide">Adicionar</span></a>
@@ -64,14 +64,17 @@ function getThreatColor(n: string) {
     <div class="stat-card card-green">
       <div class="stat-header"><span>Total</span><div class="icon-circle"><i class="fas fa-database"></i></div></div>
       <h2>{total}</h2>
+      <div class="stat-footer"><span class="badge">Ativo</span> Base conectada</div>
     </div>
     <div class="stat-card card-blue">
       <div class="stat-header"><span>Segmentos</span><div class="icon-circle"><i class="fas fa-layer-group"></i></div></div>
       <h2>{segmentos.length}</h2>
+      <div class="stat-footer"><span class="badge">Filtros</span> Categorias</div>
     </div>
     <div class="stat-card card-purple">
       <div class="stat-header"><span>Cidades</span><div class="icon-circle"><i class="fas fa-map-marker-alt"></i></div></div>
       <h2>{cidades.length}</h2>
+      <div class="stat-footer"><span class="badge">Foco</span> PR e SP</div>
     </div>
   </div>
 
@@ -100,7 +103,6 @@ function getThreatColor(n: string) {
           <span class={`threat-badge ${getThreatColor(c.ameaca)}`}>{c.ameaca || 'BAIXA'}</span>
         </div>
         
-        <!-- BOTÃO DE ABRIR MODAL DE PRODUTOS -->
         <button 
           class="comp-name-btn open-products" 
           data-linha={c.id_linha} 
@@ -128,7 +130,6 @@ function getThreatColor(n: string) {
     ))}
   </div>
 
-  <!-- MODAL DE PRODUTOS -->
   <div id="prodModal" class="modal-overlay hidden">
     <div class="modal-card large-modal">
       <div class="modal-header">
@@ -151,8 +152,7 @@ function getThreatColor(n: string) {
               </tr>
             </thead>
             <tbody id="prodTableBody">
-              <!-- Linhas via JS -->
-            </tbody>
+              </tbody>
           </table>
         </div>
         <button id="btnAddRow" class="btn-dashed">+ Adicionar Linha</button>
@@ -166,73 +166,127 @@ function getThreatColor(n: string) {
   </div>
 
   <style>
-    /* CSS Global + Específico para Modal de Produtos */
+    /* --- CSS GLOBAL E GRID --- */
     .page-intro { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .btn-add { background: #1E293B; color: white; padding: 0.8rem 1.2rem; border-radius: 30px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+    .page-intro h1 { font-size: 1.8rem; color: #1A202C; font-weight: 800; }
+    .btn-add { background: #1E293B; color: white; padding: 0.8rem 1.5rem; border-radius: 30px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
     
     .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-    .card-project { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
     
-    .card-head { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
-    .icon-box { width: 40px; height: 40px; background: #E6FFF6; color: #00BA88; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    /* --- CSS QUE FALTAVA: STATS CONTAINER --- */
+    .stats-container { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+      gap: 1.5rem; 
+      margin-bottom: 2.5rem; 
+    }
+    
+    .stat-card { 
+      padding: 1.5rem; 
+      border-radius: 16px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      height: 150px; 
+      color: white; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Cores dos Cards */
+    .card-green { background: linear-gradient(135deg, #00BA88 0%, #008F68 100%); }
+    .card-blue { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); }
+    .card-purple { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
+
+    .stat-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; opacity: 0.9; }
+    .icon-circle { background: rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    .stat-card h2 { font-size: 2.5rem; margin: 0; font-weight: 800; }
+    .stat-footer { font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; margin-top: auto; opacity: 0.9; }
+    .badge { background: rgba(255,255,255,0.25); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; }
+
+    /* --- CSS QUE FALTAVA: TOOLBAR --- */
+    .toolbar { 
+      background: white; 
+      padding: 1.2rem; 
+      border-radius: 16px; 
+      margin-bottom: 2rem; 
+      display: flex; 
+      gap: 1.5rem; 
+      flex-wrap: wrap; 
+      border: 1px solid #E2E8F0; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .filter-group { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 0.4rem; }
+    .filter-group label { font-size: 0.75rem; font-weight: 700; color: #718096; text-transform: uppercase; }
+    .control-input { 
+      padding: 0.7rem; 
+      border: 1px solid #CBD5E1; 
+      border-radius: 10px; 
+      background: #F8FAFC; 
+      width: 100%; 
+      font-family: 'Inter', sans-serif;
+      color: #2D3748;
+      font-size: 0.9rem;
+    }
+    .control-input:focus { outline: none; border-color: #00BA88; background: white; }
+
+    /* --- CSS DOS CARDS (CONCORRENTES) --- */
+    .card-project { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid transparent; display: flex; flex-direction: column; transition: transform 0.2s; }
+    .card-project:hover { transform: translateY(-5px); border-color: #00BA88; box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+    
+    .card-head { display: flex; justify-content: space-between; margin-bottom: 0.8rem; }
+    .icon-box { width: 45px; height: 45px; background: #E6FFF6; color: #00BA88; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; }
     
     .comp-name-btn {
-      background: none; border: none; padding: 0; font-size: 1.1rem; font-weight: 800; color: #1A202C;
-      text-align: left; cursor: pointer; margin: 0.5rem 0; display: flex; align-items: center; transition: 0.2s;
+      background: none; border: none; padding: 0; font-size: 1.15rem; font-weight: 800; color: #1A202C;
+      text-align: left; cursor: pointer; margin: 0.2rem 0; display: flex; align-items: center; transition: 0.2s;
       font-family: 'Inter', sans-serif; width: 100%;
     }
     .comp-name-btn:hover { color: #00BA88; }
 
-    .location { color: #718096; font-size: 0.8rem; margin-bottom: 0.8rem; }
-    .status-badge { background: #F0FDF4; color: #15803D; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
-    .threat-badge { font-size: 0.6rem; padding: 3px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; height: fit-content; }
+    .location { color: #718096; font-size: 0.85rem; margin-bottom: 1rem; font-weight: 500; }
+    .status-badge { background: #F0FDF4; color: #15803D; padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    
+    .threat-badge { font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; height: fit-content; }
     .threat-badge.red { background: #FECACA; color: #B91C1C; } .threat-badge.orange { background: #FED7AA; color: #C2410C; } .threat-badge.green { background: #DCFCE7; color: #15803D; }
 
-    .metrics { display: flex; gap: 0.8rem; margin: 1rem 0; background: #F8FAFC; padding: 0.8rem; border-radius: 10px; }
+    .metrics { display: flex; gap: 1rem; margin: 1.2rem 0; background: #F8FAFC; padding: 1rem; border-radius: 12px; border: 1px solid #F1F5F9; }
     .metric { display: flex; flex-direction: column; }
-    .metric small { font-size: 0.6rem; font-weight: 700; color: #718096; text-transform: uppercase; }
-    .metric strong { font-size: 0.85rem; color: #1A202C; }
+    .metric small { font-size: 0.65rem; font-weight: 700; color: #718096; text-transform: uppercase; margin-bottom: 2px; }
+    .metric strong { font-size: 0.9rem; color: #1A202C; }
 
-    .actions-grid { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid #F1F5F9; }
-    .btn-action { display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.6rem; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: 700; border: 1px solid transparent; }
-    .btn-action.website { background: #EEF2FF; color: #4F46E5; } .btn-action.instagram { background: #FDF2F8; color: #DB2777; } .btn-action.meta { background: #EFF6FF; color: #1D4ED8; } .btn-action.google { background: #FFFBEB; color: #B45309; }
+    .actions-grid { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; padding-top: 1.2rem; border-top: 1px solid #F1F5F9; }
+    .btn-action { display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem; border-radius: 10px; text-decoration: none; font-size: 0.8rem; font-weight: 700; border: 1px solid transparent; transition: 0.2s; }
+    .btn-action.website { background: #EEF2FF; color: #4F46E5; border-color: #C7D2FE; }
+    .btn-action.instagram { background: #FDF2F8; color: #DB2777; border-color: #FBCFE8; }
+    .btn-action.meta { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
+    .btn-action.google { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+    .btn-action:hover { transform: translateY(-2px); }
 
-    /* Styles do Stats e Toolbar (Mantidos) */
-    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .stat-card { padding: 1.5rem; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; height: 140px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .card-green { background: linear-gradient(135deg, #00BA88 0%, #008F68 100%); } .card-blue { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); } .card-purple { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
-    .stat-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
-    .icon-circle { background: rgba(255,255,255,0.2); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-    .stat-card h2 { font-size: 2.2rem; margin: 0; font-weight: 800; }
-
-    .toolbar { background: white; padding: 1rem; border-radius: 16px; margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; border: 1px solid #E2E8F0; }
-    .filter-group { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 0.3rem; }
-    .filter-group label { font-size: 0.7rem; font-weight: 700; color: #718096; text-transform: uppercase; }
-    .control-input { padding: 0.6rem; border: 1px solid #CBD5E1; border-radius: 8px; background: #F8FAFC; width: 100%; }
-
-    /* --- MODAL --- */
+    /* --- MODAL STYLES --- */
     .hidden { display: none !important; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; justify-content: center; align-items: center; padding: 1rem; }
     .modal-card { background: white; width: 100%; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; }
-    .large-modal { max-width: 700px; }
+    .large-modal { max-width: 750px; }
 
     .modal-header { padding: 1.5rem; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: flex-start; }
-    .modal-header h2 { margin: 0; font-size: 1.4rem; color: #1A202C; }
-    .modal-header p { margin: 0.2rem 0 0; color: #718096; font-size: 0.9rem; }
+    .modal-header h2 { margin: 0; font-size: 1.5rem; color: #1A202C; }
+    .modal-header p { margin: 0.3rem 0 0; color: #718096; font-size: 0.9rem; }
     .close-button { background: none; border: none; font-size: 2rem; line-height: 0.8; cursor: pointer; color: #A0AEC0; }
 
     .modal-body { padding: 1.5rem; overflow-y: auto; }
     
     .table-wrapper { border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
     #prodTable { width: 100%; border-collapse: collapse; }
-    #prodTable th { background: #F8FAFC; padding: 0.8rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #64748B; font-weight: 700; border-bottom: 1px solid #E2E8F0; }
+    #prodTable th { background: #F8FAFC; padding: 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #64748B; font-weight: 700; border-bottom: 1px solid #E2E8F0; }
     #prodTable td { padding: 0.5rem; border-bottom: 1px solid #F1F5F9; }
     
-    .tbl-input { width: 100%; padding: 0.5rem; border: 1px solid transparent; border-radius: 4px; font-family: inherit; font-size: 0.9rem; }
+    .tbl-input { width: 100%; padding: 0.6rem; border: 1px solid transparent; border-radius: 6px; font-family: inherit; font-size: 0.9rem; color: #1A202C; }
     .tbl-input:hover { border-color: #E2E8F0; }
     .tbl-input:focus { outline: none; border-color: #00BA88; background: #F0FDF4; }
 
-    .btn-del-row { color: #EF4444; background: none; border: none; cursor: pointer; padding: 0.4rem; border-radius: 4px; }
+    .btn-del-row { color: #EF4444; background: none; border: none; cursor: pointer; padding: 0.5rem; border-radius: 6px; }
     .btn-del-row:hover { background: #FEF2F2; }
 
     .btn-dashed { width: 100%; padding: 0.8rem; border: 2px dashed #CBD5E1; background: none; color: #64748B; font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.2s; }
@@ -247,19 +301,21 @@ function getThreatColor(n: string) {
     @media(max-width:600px) {
       .grid-cards, .stats-container { grid-template-columns: 1fr; }
       .mobile-hide { display: none; }
+      .actions-grid { grid-template-columns: 1fr; }
     }
   </style>
 
   <script is:inline>
-    // Filtros
+    // LÓGICA FILTROS
     const selSegmento = document.getElementById('filterSegmento');
     const selCidade = document.getElementById('filterCidade');
     const grid = document.getElementById('gridCards');
-    let cards = Array.from(grid.children);
-
+    
     function updateGrid() {
+      let cards = Array.from(grid.children);
       const valSeg = selSegmento.value;
       const valCid = selCidade.value;
+      
       cards.forEach(card => {
         const seg = card.dataset.seg;
         const reg = card.dataset.regiao;
@@ -271,7 +327,7 @@ function getThreatColor(n: string) {
     selSegmento.addEventListener('change', updateGrid);
     selCidade.addEventListener('change', updateGrid);
 
-    // Modal de Produtos
+    // --- LÓGICA MODAL DE PRODUTOS ---
     const modal = document.getElementById('prodModal');
     const closeBtn = document.getElementById('closeProdModal');
     const tableBody = document.getElementById('prodTableBody');
