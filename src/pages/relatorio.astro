@@ -78,10 +78,6 @@ const dadosGraficos = {
 
 <Layout title="Relatórios - Nicopel" activeMenuItem="relatorio">
   
-  <!-- 
-    SOLUÇÃO DEFINITIVA: Carregar Chart.js de forma síncrona (bloqueante) 
-    para garantir que ele exista antes de rodar o código dos gráficos.
-  -->
   <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <div class="report-container">
@@ -109,7 +105,6 @@ const dadosGraficos = {
       </div>
     )}
 
-    <!-- KPI CARDS -->
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-icon green"><i class="fas fa-building"></i></div>
@@ -125,7 +120,6 @@ const dadosGraficos = {
       </div>
     </div>
 
-    <!-- LINHA 1: GRÁFICOS -->
     <div class="charts-row">
       <div class="chart-card">
         <h3>Por Segmento</h3>
@@ -142,7 +136,6 @@ const dadosGraficos = {
       </div>
     </div>
 
-    <!-- LINHA 2: GRÁFICO + TABELA -->
     <div class="charts-row">
       <div class="chart-card">
         <h3>Top Regiões</h3>
@@ -227,8 +220,9 @@ const dadosGraficos = {
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
       display: flex; 
       flex-direction: column;
-      min-height: 400px; /* Altura mínima para alinhar */
-      height: 100%;
+      /* TRAVANDO A ALTURA PARA EVITAR CRESCIMENTO INFINITO */
+      height: 450px; 
+      overflow: hidden; 
     }
 
     .chart-card h3 { margin: 0 0 1.5rem 0; font-size: 1rem; color: #4A5568; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -238,18 +232,23 @@ const dadosGraficos = {
       position: relative; 
       flex: 1; 
       width: 100%;
-      min-height: 250px;
-      display: flex;
-      justify-content: center;
+      height: 100%; 
+      min-height: 0; 
     }
-    .doughnut-wrapper { max-height: 300px; }
+    .doughnut-wrapper { 
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        max-height: 300px; 
+        margin: auto 0;
+    }
 
     /* Table */
-    .table-card { padding: 0; overflow: hidden; }
+    .table-card { padding: 0; overflow: hidden; height: 450px; }
     .card-title { padding: 1.5rem 1.5rem 0.5rem 1.5rem; }
-    .table-responsive { width: 100%; overflow-x: auto; }
+    .table-responsive { width: 100%; overflow-y: auto; height: 100%; }
     table { width: 100%; border-collapse: collapse; min-width: 400px; }
-    th { background: #F8FAFC; color: #64748B; font-weight: 700; text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid #E2E8F0; }
+    th { position: sticky; top: 0; background: #F8FAFC; color: #64748B; font-weight: 700; text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid #E2E8F0; z-index: 10; }
     td { padding: 1rem 1.5rem; border-top: 1px solid #F1F5F9; font-size: 0.85rem; color: #2D3748; }
     .fw-bold { font-weight: 600; }
     .empty-row { text-align: center; color: #94A3B8; padding: 3rem; }
@@ -260,22 +259,22 @@ const dadosGraficos = {
     @media(max-width: 1024px) {
       .charts-row { grid-template-columns: 1fr; }
       .mobile-hide { display: none; }
+      .chart-card { height: auto; min-height: 400px; }
     }
     @media print {
       :global(aside) { display: none !important; }
       :global(main) { margin: 0 !important; padding: 0 !important; }
       .header-actions, .hide-print { display: none !important; }
       .report-container { padding: 0 !important; }
-      .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; margin-bottom: 2rem; min-height: auto; }
+      .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; margin-bottom: 2rem; min-height: auto; height: auto !important; }
       .charts-row { display: block !important; }
     }
   </style>
 
   <script is:inline define:vars={{ dadosGraficos, concorrentes }}>
-    // Como o script da lib está no topo com is:inline, 'Chart' já deve estar disponível aqui.
-    // Colocamos dentro do DOMContentLoaded para garantir que o HTML (canvas) já renderizou.
     
     document.addEventListener('DOMContentLoaded', () => {
+      
       if (typeof Chart === 'undefined') {
         console.error("Chart.js não carregou corretamente.");
         return;
@@ -285,7 +284,7 @@ const dadosGraficos = {
 
       const commonOptions = {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: false, // CRÍTICO: Permite que o gráfico respeite a altura do pai
         plugins: { legend: { display: false } },
         layout: { padding: 10 }
       };
