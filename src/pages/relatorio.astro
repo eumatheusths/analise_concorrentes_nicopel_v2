@@ -2,7 +2,7 @@
 // src/pages/relatorio.astro
 import Layout from '../layouts/Layout.astro';
 
-// --- 1. TIPAGEM ---
+// 1. TIPAGEM
 interface Concorrente {
   nome: string;
   seguimento: string;
@@ -18,12 +18,12 @@ interface Concorrente {
 
 type Contador = Record<string, number>;
 
-// --- 2. BUSCA DE DADOS ---
+// 2. BUSCA DE DADOS (ROBUSTA)
 let concorrentes: Concorrente[] = [];
 let erroCarregamento = false;
 
 try {
-  // URL absoluta para evitar erros de SSR
+  // Usa URL absoluta para garantir funcionamento no Server Side
   const apiUrl = new URL('/api/concorrentes.json', Astro.url);
   const response = await fetch(apiUrl);
   
@@ -31,32 +31,31 @@ try {
     const json = await response.json();
     concorrentes = json.data || [];
   } else {
+    console.error("Status API:", response.status);
     erroCarregamento = true;
   }
 } catch (e) {
+  console.error("Erro Fetch:", e);
   erroCarregamento = true;
 }
 
-// --- 3. PROCESSAMENTO ---
+// 3. PROCESSAMENTO DE DADOS
 const total = concorrentes.length;
 const totalAltaAmeaca = concorrentes.filter((c) => c.ameaca === 'ALTA').length;
 const totalComAds = concorrentes.filter((c) => c.meta_ads || c.google_ads).length;
 
-// Segmentos
 const porSegmento = concorrentes.reduce((acc: Contador, curr) => {
   const seg = curr.seguimento || 'Não Informado';
   acc[seg] = (acc[seg] || 0) + 1;
   return acc;
 }, {});
 
-// Ameaça
 const porAmeaca = {
   'ALTA': concorrentes.filter((c) => c.ameaca === 'ALTA').length,
   'MEDIA': concorrentes.filter((c) => c.ameaca === 'MEDIA').length,
   'BAIXA': concorrentes.filter((c) => (c.ameaca === 'BAIXA' || !c.ameaca)).length,
 };
 
-// Regiões
 const porRegiaoAll = concorrentes.reduce((acc: Contador, curr) => {
   const reg = curr.regiao || 'Não Inf.';
   acc[reg] = (acc[reg] || 0) + 1;
@@ -79,7 +78,11 @@ const dadosGraficos = {
 
 <Layout title="Relatórios - Nicopel" activeMenuItem="relatorio">
   
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 
+    SOLUÇÃO DEFINITIVA: Carregar Chart.js de forma síncrona (bloqueante) 
+    para garantir que ele exista antes de rodar o código dos gráficos.
+  -->
+  <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <div class="report-container">
     
@@ -88,6 +91,7 @@ const dadosGraficos = {
         <h1>Relatório de Inteligência</h1>
         <p>Análise estatística da base de dados.</p>
       </div>
+      
       <div class="header-actions">
         <button id="btnPrint" class="btn-action btn-print">
           <i class="fas fa-print"></i> <span class="mobile-hide">Imprimir</span>
@@ -105,6 +109,7 @@ const dadosGraficos = {
       </div>
     )}
 
+    <!-- KPI CARDS -->
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-icon green"><i class="fas fa-building"></i></div>
@@ -120,6 +125,7 @@ const dadosGraficos = {
       </div>
     </div>
 
+    <!-- LINHA 1: GRÁFICOS -->
     <div class="charts-row">
       <div class="chart-card">
         <h3>Por Segmento</h3>
@@ -136,6 +142,7 @@ const dadosGraficos = {
       </div>
     </div>
 
+    <!-- LINHA 2: GRÁFICO + TABELA -->
     <div class="charts-row">
       <div class="chart-card">
         <h3>Top Regiões</h3>
@@ -204,12 +211,10 @@ const dadosGraficos = {
     .kpi-info span { font-size: 0.8rem; color: #64748B; font-weight: 700; text-transform: uppercase; }
     .kpi-info strong { font-size: 1.8rem; color: #1A202C; font-weight: 800; line-height: 1.1; }
 
-    /* --- LAYOUT DOS GRÁFICOS (GRID CORRIGIDO) --- */
+    /* GRÁFICOS - Layout Travado */
     .charts-row { 
       display: grid; 
-      /* Aqui forçamos 2 colunas de tamanhos iguais */
-      grid-template-columns: 1fr 1fr; 
-      /* Gap bem definido para separar os blocos */
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Adaptável mas com mínimo de 350px */
       gap: 2rem; 
       margin-bottom: 2rem; 
     }
@@ -222,28 +227,25 @@ const dadosGraficos = {
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
       display: flex; 
       flex-direction: column;
-      height: 100%; /* Força altura igual na linha */
-      min-height: 400px; /* Altura mínima garantida */
+      min-height: 400px; /* Altura mínima para alinhar */
+      height: 100%;
     }
 
     .chart-card h3 { margin: 0 0 1.5rem 0; font-size: 1rem; color: #4A5568; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     
+    /* Container do Canvas: Essencial para Chart.js não vazar */
     .chart-wrapper { 
       position: relative; 
-      flex: 1; /* Ocupa o resto do card */
-      width: 100%; 
+      flex: 1; 
+      width: 100%;
+      min-height: 250px;
       display: flex;
       justify-content: center;
-      align-items: center;
     }
-
-    /* Ajuste para o gráfico de Rosca não ficar gigante */
-    .doughnut-wrapper {
-      max-height: 300px;
-    }
+    .doughnut-wrapper { max-height: 300px; }
 
     /* Table */
-    .table-card { padding: 0; overflow: hidden; min-height: 400px; }
+    .table-card { padding: 0; overflow: hidden; }
     .card-title { padding: 1.5rem 1.5rem 0.5rem 1.5rem; }
     .table-responsive { width: 100%; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; min-width: 400px; }
@@ -254,13 +256,11 @@ const dadosGraficos = {
     .btn-mini { background: #F1F5F9; color: #64748B; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.9rem; }
     .btn-mini:hover { background: #00BA88; color: white; }
 
-    /* --- RESPONSIVIDADE --- */
-    /* Em tablets e celulares, vira 1 coluna */
+    /* Mobile */
     @media(max-width: 1024px) {
       .charts-row { grid-template-columns: 1fr; }
       .mobile-hide { display: none; }
     }
-
     @media print {
       :global(aside) { display: none !important; }
       :global(main) { margin: 0 !important; padding: 0 !important; }
@@ -271,10 +271,16 @@ const dadosGraficos = {
     }
   </style>
 
-  <script define:vars={{ dadosGraficos, concorrentes }}>
+  <script is:inline define:vars={{ dadosGraficos, concorrentes }}>
+    // Como o script da lib está no topo com is:inline, 'Chart' já deve estar disponível aqui.
+    // Colocamos dentro do DOMContentLoaded para garantir que o HTML (canvas) já renderizou.
     
-    function initCharts() {
-      if (typeof Chart === 'undefined') return; // Aguarda load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof Chart === 'undefined') {
+        console.error("Chart.js não carregou corretamente.");
+        return;
+      }
+
       if (concorrentes.length === 0) return;
 
       const commonOptions = {
@@ -291,19 +297,13 @@ const dadosGraficos = {
           type: 'bar',
           data: {
             labels: dadosGraficos.segmentos.labels,
-            datasets: [{
-              label: 'Empresas',
-              data: dadosGraficos.segmentos.data,
-              backgroundColor: '#00BA88',
-              borderRadius: 6,
-              barPercentage: 0.6
-            }]
+            datasets: [{ label: 'Empresas', data: dadosGraficos.segmentos.data, backgroundColor: '#00BA88', borderRadius: 6, barPercentage: 0.6 }]
           },
           options: { ...commonOptions, indexAxis: 'y', scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }
         });
       }
 
-      // 2. AMEAÇA (Doughnut)
+      // 2. AMEAÇA
       const ctxAmeaca = document.getElementById('chartAmeaca');
       if (ctxAmeaca) {
         new Chart(ctxAmeaca, {
@@ -320,10 +320,8 @@ const dadosGraficos = {
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: { 
-              legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, boxWidth: 8 } } 
-            }
+            cutout: '75%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, boxWidth: 8 } } }
           }
         });
       }
@@ -335,25 +333,12 @@ const dadosGraficos = {
           type: 'bar',
           data: {
             labels: dadosGraficos.regiao.labels,
-            datasets: [{
-              label: 'Qtd',
-              data: dadosGraficos.regiao.data,
-              backgroundColor: '#3B82F6',
-              borderRadius: 6,
-              barPercentage: 0.5
-            }]
+            datasets: [{ label: 'Qtd', data: dadosGraficos.regiao.data, backgroundColor: '#3B82F6', borderRadius: 6, barPercentage: 0.5 }]
           },
           options: { ...commonOptions, scales: { y: { beginAtZero: true, grid: { borderDash: [5, 5] } }, x: { grid: { display: false } } } }
         });
       }
-    }
-
-    // Espera o Script carregar
-    const script = document.createElement('script');
-    script.src = "https://cdn.jsdelivr.net/npm/chart.js";
-    script.async = true;
-    script.onload = initCharts;
-    document.head.appendChild(script);
+    });
 
     // Botões
     document.getElementById('btnPrint')?.addEventListener('click', () => window.print());
