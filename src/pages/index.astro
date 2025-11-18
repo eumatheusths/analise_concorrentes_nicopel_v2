@@ -30,7 +30,6 @@ try {
   concorrentes = json.data || [];
 } catch (e) { console.error(e); }
 
-// Dados Filtros
 const total = concorrentes.length;
 const segmentos = [...new Set(concorrentes.map(c => c.seguimento))].filter(Boolean);
 const cidades = [...new Set(concorrentes.map(c => c.regiao))].filter(Boolean).sort();
@@ -40,6 +39,7 @@ function fixUrl(url: string) {
   let clean = url.trim();
   return clean.match(/^https?:\/\//) ? clean : 'https://' + clean;
 }
+
 function getThreatColor(n: string) {
   const level = n ? n.toUpperCase() : 'BAIXA';
   if (level === 'ALTA') return 'red';
@@ -53,7 +53,7 @@ function getThreatColor(n: string) {
   <div class="page-intro">
     <div>
       <h1>Visão de Mercado</h1>
-      <p>Clique no nome da empresa para ver/editar os produtos.</p>
+      <p>Clique no nome da empresa para ver/editar a tabela de produtos.</p>
     </div>
     <div class="actions">
       <a href="/adicionar" class="btn-add"><i class="fas fa-plus"></i> <span class="mobile-hide">Adicionar</span></a>
@@ -100,13 +100,14 @@ function getThreatColor(n: string) {
           <span class={`threat-badge ${getThreatColor(c.ameaca)}`}>{c.ameaca || 'BAIXA'}</span>
         </div>
         
+        <!-- BOTÃO DE ABRIR MODAL DE PRODUTOS -->
         <button 
           class="comp-name-btn open-products" 
           data-linha={c.id_linha} 
           data-nome={c.nome}
           data-produtos={JSON.stringify(c.produtos)}
         >
-          {c.nome.toUpperCase()} <i class="fas fa-external-link-alt" style="font-size: 0.7em; margin-left: 5px; opacity: 0.5;"></i>
+          {c.nome.toUpperCase()} <i class="fas fa-external-link-alt" style="font-size: 0.7em; margin-left: 8px; opacity: 0.5;"></i>
         </button>
 
         <p class="location"><i class="fas fa-map-pin"></i> {c.regiao}</p>
@@ -127,6 +128,7 @@ function getThreatColor(n: string) {
     ))}
   </div>
 
+  <!-- MODAL DE PRODUTOS -->
   <div id="prodModal" class="modal-overlay hidden">
     <div class="modal-card large-modal">
       <div class="modal-header">
@@ -149,7 +151,8 @@ function getThreatColor(n: string) {
               </tr>
             </thead>
             <tbody id="prodTableBody">
-              </tbody>
+              <!-- Linhas via JS -->
+            </tbody>
           </table>
         </div>
         <button id="btnAddRow" class="btn-dashed">+ Adicionar Linha</button>
@@ -163,7 +166,7 @@ function getThreatColor(n: string) {
   </div>
 
   <style>
-    /* ... CSS Global mantido ... */
+    /* CSS Global + Específico para Modal de Produtos */
     .page-intro { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .btn-add { background: #1E293B; color: white; padding: 0.8rem 1.2rem; border-radius: 30px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
     
@@ -173,11 +176,10 @@ function getThreatColor(n: string) {
     .card-head { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
     .icon-box { width: 40px; height: 40px; background: #E6FFF6; color: #00BA88; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
     
-    /* BOTÃO TÍTULO CLICÁVEL */
     .comp-name-btn {
       background: none; border: none; padding: 0; font-size: 1.1rem; font-weight: 800; color: #1A202C;
       text-align: left; cursor: pointer; margin: 0.5rem 0; display: flex; align-items: center; transition: 0.2s;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', sans-serif; width: 100%;
     }
     .comp-name-btn:hover { color: #00BA88; }
 
@@ -192,10 +194,23 @@ function getThreatColor(n: string) {
     .metric strong { font-size: 0.85rem; color: #1A202C; }
 
     .actions-grid { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid #F1F5F9; }
-    .btn-action { display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.6rem; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: 700; }
+    .btn-action { display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.6rem; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: 700; border: 1px solid transparent; }
     .btn-action.website { background: #EEF2FF; color: #4F46E5; } .btn-action.instagram { background: #FDF2F8; color: #DB2777; } .btn-action.meta { background: #EFF6FF; color: #1D4ED8; } .btn-action.google { background: #FFFBEB; color: #B45309; }
 
-    /* --- MODAL STYLES --- */
+    /* Styles do Stats e Toolbar (Mantidos) */
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { padding: 1.5rem; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; height: 140px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .card-green { background: linear-gradient(135deg, #00BA88 0%, #008F68 100%); } .card-blue { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); } .card-purple { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
+    .stat-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+    .icon-circle { background: rgba(255,255,255,0.2); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .stat-card h2 { font-size: 2.2rem; margin: 0; font-weight: 800; }
+
+    .toolbar { background: white; padding: 1rem; border-radius: 16px; margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; border: 1px solid #E2E8F0; }
+    .filter-group { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 0.3rem; }
+    .filter-group label { font-size: 0.7rem; font-weight: 700; color: #718096; text-transform: uppercase; }
+    .control-input { padding: 0.6rem; border: 1px solid #CBD5E1; border-radius: 8px; background: #F8FAFC; width: 100%; }
+
+    /* --- MODAL --- */
     .hidden { display: none !important; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; justify-content: center; align-items: center; padding: 1rem; }
     .modal-card { background: white; width: 100%; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; }
@@ -208,13 +223,11 @@ function getThreatColor(n: string) {
 
     .modal-body { padding: 1.5rem; overflow-y: auto; }
     
-    /* TABELA NO MODAL */
     .table-wrapper { border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
     #prodTable { width: 100%; border-collapse: collapse; }
     #prodTable th { background: #F8FAFC; padding: 0.8rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #64748B; font-weight: 700; border-bottom: 1px solid #E2E8F0; }
     #prodTable td { padding: 0.5rem; border-bottom: 1px solid #F1F5F9; }
     
-    /* Inputs da Tabela */
     .tbl-input { width: 100%; padding: 0.5rem; border: 1px solid transparent; border-radius: 4px; font-family: inherit; font-size: 0.9rem; }
     .tbl-input:hover { border-color: #E2E8F0; }
     .tbl-input:focus { outline: none; border-color: #00BA88; background: #F0FDF4; }
@@ -231,18 +244,17 @@ function getThreatColor(n: string) {
     
     #saveStatus { font-size: 0.9rem; font-weight: 600; color: #00BA88; }
 
-    /* Responsividade */
     @media(max-width:600px) {
-      .grid-cards { grid-template-columns: 1fr; }
-      .stats-container { grid-template-columns: 1fr; }
+      .grid-cards, .stats-container { grid-template-columns: 1fr; }
+      .mobile-hide { display: none; }
     }
   </style>
 
   <script is:inline>
-    // FILTROS (Mesma lógica anterior)
-    const grid = document.getElementById('gridCards');
+    // Filtros
     const selSegmento = document.getElementById('filterSegmento');
     const selCidade = document.getElementById('filterCidade');
+    const grid = document.getElementById('gridCards');
     let cards = Array.from(grid.children);
 
     function updateGrid() {
@@ -259,7 +271,7 @@ function getThreatColor(n: string) {
     selSegmento.addEventListener('change', updateGrid);
     selCidade.addEventListener('change', updateGrid);
 
-    // --- LÓGICA DO MODAL DE PRODUTOS ---
+    // Modal de Produtos
     const modal = document.getElementById('prodModal');
     const closeBtn = document.getElementById('closeProdModal');
     const tableBody = document.getElementById('prodTableBody');
@@ -270,7 +282,6 @@ function getThreatColor(n: string) {
     
     let currentLinha = null;
 
-    // Função para criar uma linha na tabela
     function createRow(produto = { nome: '', minimo: '', preco: '' }) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -279,82 +290,71 @@ function getThreatColor(n: string) {
         <td><input type="text" class="tbl-input" placeholder="0,00" value="${produto.preco}"></td>
         <td style="text-align: center;"><button class="btn-del-row"><i class="fas fa-times"></i></button></td>
       `;
-      
-      // Evento de deletar linha
       tr.querySelector('.btn-del-row').addEventListener('click', () => tr.remove());
       tableBody.appendChild(tr);
     }
 
-    // Abrir Modal
     document.querySelectorAll('.open-products').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', () => {
         const nome = btn.dataset.nome;
         const linha = btn.dataset.linha;
         const produtos = JSON.parse(btn.dataset.produtos || '[]');
         
         currentLinha = linha;
         modalTitle.innerText = nome;
-        tableBody.innerHTML = ''; // Limpa tabela
+        tableBody.innerHTML = '';
         saveStatus.innerText = '';
 
         if (produtos.length > 0) {
           produtos.forEach(p => createRow(p));
         } else {
-          createRow(); // Cria uma vazia se não tiver nada
+          createRow(); 
         }
-
         modal.classList.remove('hidden');
       });
     });
 
-    // Adicionar Linha Vazia
     btnAddRow.addEventListener('click', () => createRow());
 
-    // Fechar Modal
     function closeModal() { modal.classList.add('hidden'); }
     closeBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if(e.target===modal) closeModal(); });
 
-    // SALVAR PRODUTOS (PATCH)
     btnSave.addEventListener('click', async () => {
       if (!currentLinha) return;
       btnSave.innerText = 'Salvando...';
       
-      // Ler dados da tabela
       const rows = tableBody.querySelectorAll('tr');
       const novosProdutos = [];
       rows.forEach(tr => {
         const inputs = tr.querySelectorAll('input');
-        const nome = inputs[0].value.trim();
-        const min = inputs[1].value.trim();
-        const preco = inputs[2].value.trim();
-        
-        if (nome) { // Só salva se tiver nome
-          novosProdutos.push({ nome: nome, minimo: min, preco: preco });
+        if (inputs[0].value.trim()) {
+          novosProdutos.push({ 
+            nome: inputs[0].value.trim(), 
+            minimo: inputs[1].value.trim(), 
+            preco: inputs[2].value.trim() 
+          });
         }
       });
 
       try {
         const res = await fetch('/api/gerenciar.json', {
-          method: 'PATCH', // Usa o novo método PATCH que criamos
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ linha: currentLinha, produtos: novosProdutos })
         });
 
         if (res.ok) {
           saveStatus.innerText = '✅ Salvo!';
-          setTimeout(() => {
-            window.location.reload(); // Recarrega para atualizar os dados-atributos
-          }, 800);
+          setTimeout(() => window.location.reload(), 800);
         } else {
-          saveStatus.innerText = '❌ Erro ao salvar.';
+          saveStatus.innerText = '❌ Erro.';
         }
       } catch (e) {
-        saveStatus.innerText = '❌ Erro de conexão.';
+        saveStatus.innerText = '❌ Erro.';
       } finally {
         btnSave.innerText = 'Salvar Tabela';
       }
     });
-
   </script>
 </Layout>
