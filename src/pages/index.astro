@@ -49,15 +49,14 @@ function getThreatColor(n: string) {
   return 'green';
 }
 
-// Função para converter texto "R$ 1.500,00" ou "1000" em número JS
+// Converte "1.500,00" para 1500.00
 function parseValor(str: string) {
   if (!str) return 0;
-  // Remove tudo que não é dígito ou vírgula
   const limpo = str.replace(/[^\d,]/g, '').replace(',', '.');
   return parseFloat(limpo) || 0;
 }
 
-// Formata número para Moeda BRL
+// Formata para R$
 function formatMoeda(val: number) {
   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
@@ -114,29 +113,42 @@ function formatMoeda(val: number) {
   <div class="grid-cards" id="gridCards">
     {concorrentes.map(c => {
       
-      // --- LÓGICA DE CÁLCULO AUTOMÁTICO ---
+      // --- NOVA LÓGICA DE CÁLCULO (PEDIDO REAL) ---
       let displayTicket = c.ticket_medio || '-';
       let displayMinimo = c.pedido_minimo || '-';
 
-      // Se existirem produtos cadastrados, calcula a média
+      // Se tiver produtos na tabela, calcula o real
       if (c.produtos && c.produtos.length > 0) {
         
-        // 1. Calcula Ticket Médio (Baseado nos Preços)
-        const precos = c.produtos.map(p => parseValor(p.preco)).filter(v => v > 0);
-        if (precos.length > 0) {
-          const mediaPreco = precos.reduce((acc, val) => acc + val, 0) / precos.length;
-          displayTicket = formatMoeda(mediaPreco);
-        }
+        let somaValoresTotais = 0;
+        let somaQuantidades = 0;
+        let itensValidos = 0;
 
-        // 2. Calcula Média do Mínimo (Baseado na Qtd Mínima)
-        const minimos = c.produtos.map(p => parseValor(p.minimo)).filter(v => v > 0);
-        if (minimos.length > 0) {
-          const mediaMinimo = minimos.reduce((acc, val) => acc + val, 0) / minimos.length;
-          // Arredonda para não ficar "500.3333"
-          displayMinimo = Math.round(mediaMinimo).toString(); 
+        c.produtos.forEach(p => {
+          const qtd = parseValor(p.minimo);      // Ex: 500
+          const unitario = parseValor(p.preco);  // Ex: 0.56
+          
+          if (qtd > 0 && unitario > 0) {
+            // Valor do Pedido = Qtd * Preço Unitário (Ex: 500 * 0.56 = 280.00)
+            const valorDoPedido = qtd * unitario;
+            
+            somaValoresTotais += valorDoPedido;
+            somaQuantidades += qtd;
+            itensValidos++;
+          }
+        });
+
+        if (itensValidos > 0) {
+          // Ticket Médio = Média dos Valores dos Pedidos
+          const mediaFinanceira = somaValoresTotais / itensValidos;
+          displayTicket = formatMoeda(mediaFinanceira);
+
+          // Média de Mínimo = Média das quantidades
+          const mediaQtd = somaQuantidades / itensValidos;
+          displayMinimo = Math.round(mediaQtd).toString();
         }
       }
-      // --------------------------------------
+      // ----------------------------------------------
 
       return (
         <div class="card-project" data-nome={c.nome} data-regiao={c.regiao} data-seg={c.seguimento}>
@@ -214,8 +226,7 @@ function formatMoeda(val: number) {
   </div>
 
   <style>
-    /* ... (TODO O CSS ANTERIOR MANTIDO AQUI) ... */
-    /* Copie e cole o CSS do arquivo anterior aqui, não mudou nada no estilo */
+    /* ... (TODO O CSS ANTERIOR MANTIDO) ... */
     .page-intro { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .page-intro h1 { font-size: 1.8rem; color: #1A202C; font-weight: 800; }
     .btn-add { background: #1E293B; color: white; padding: 0.8rem 1.5rem; border-radius: 30px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
