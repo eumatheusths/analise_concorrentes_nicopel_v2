@@ -25,16 +25,18 @@ interface Concorrente {
 
 let concorrentes: Concorrente[] = [];
 try {
+  // Busca dados da API
   const response = await fetch(new URL('/api/concorrentes.json', Astro.url));
   const json = await response.json();
   concorrentes = json.data || [];
 } catch (e) { console.error(e); }
 
+// Dados para os filtros e stats
 const total = concorrentes.length;
 const segmentos = [...new Set(concorrentes.map(c => c.seguimento))].filter(Boolean);
 const cidades = [...new Set(concorrentes.map(c => c.regiao))].filter(Boolean).sort();
 
-// --- FUNÇÕES UTILITÁRIAS ---
+// --- FUNÇÕES UTILITÁRIAS (Server Side) ---
 
 function fixUrl(url: string) {
   if (!url) return '';
@@ -49,18 +51,15 @@ function getThreatColor(n: string) {
   return 'green';
 }
 
-// Converte "1.500,00" para 1500.00
 function parseValor(str: string) {
   if (!str) return 0;
   const limpo = str.replace(/[^\d,]/g, '').replace(',', '.');
   return parseFloat(limpo) || 0;
 }
 
-// Formata para R$
 function formatMoeda(val: number) {
   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
-
 ---
 
 <Layout title="Dashboard - Nicopel" activeMenuItem="dashboard">
@@ -68,7 +67,7 @@ function formatMoeda(val: number) {
   <div class="page-intro">
     <div>
       <h1>Visão de Mercado</h1>
-      <p>Clique no nome da empresa para ver/editar os produtos.</p>
+      <p>Clique no nome da empresa para ver/editar a tabela de produtos.</p>
     </div>
     <div class="actions">
       <a href="/adicionar" class="btn-add"><i class="fas fa-plus"></i> <span class="mobile-hide">Adicionar</span></a>
@@ -108,50 +107,51 @@ function formatMoeda(val: number) {
         {cidades.map(c => <option value={c}>{c}</option>)}
       </select>
     </div>
+    <div class="filter-group">
+      <label>Ordenar:</label>
+      <select id="sortOrder" class="control-input">
+        <option value="az">Nome (A-Z)</option>
+        <option value="ameaca_desc">Ameaça (Alta)</option>
+      </select>
+    </div>
   </div>
 
   <div class="grid-cards" id="gridCards">
     {concorrentes.map(c => {
       
-      // --- NOVA LÓGICA DE CÁLCULO (PEDIDO REAL) ---
+      // CÁLCULO AUTOMÁTICO DE MÉDIAS
       let displayTicket = c.ticket_medio || '-';
       let displayMinimo = c.pedido_minimo || '-';
 
-      // Se tiver produtos na tabela, calcula o real
       if (c.produtos && c.produtos.length > 0) {
-        
         let somaValoresTotais = 0;
         let somaQuantidades = 0;
         let itensValidos = 0;
 
         c.produtos.forEach(p => {
-          const qtd = parseValor(p.minimo);      // Ex: 500
-          const unitario = parseValor(p.preco);  // Ex: 0.56
-          
+          const qtd = parseValor(p.minimo);
+          const unitario = parseValor(p.preco);
           if (qtd > 0 && unitario > 0) {
-            // Valor do Pedido = Qtd * Preço Unitário (Ex: 500 * 0.56 = 280.00)
-            const valorDoPedido = qtd * unitario;
-            
-            somaValoresTotais += valorDoPedido;
+            somaValoresTotais += (qtd * unitario);
             somaQuantidades += qtd;
             itensValidos++;
           }
         });
 
         if (itensValidos > 0) {
-          // Ticket Médio = Média dos Valores dos Pedidos
-          const mediaFinanceira = somaValoresTotais / itensValidos;
-          displayTicket = formatMoeda(mediaFinanceira);
-
-          // Média de Mínimo = Média das quantidades
-          const mediaQtd = somaQuantidades / itensValidos;
-          displayMinimo = Math.round(mediaQtd).toString();
+          displayTicket = formatMoeda(somaValoresTotais / itensValidos);
+          displayMinimo = Math.round(somaQuantidades / itensValidos).toString();
         }
       }
-      // ----------------------------------------------
 
       return (
-        <div class="card-project" data-nome={c.nome} data-regiao={c.regiao} data-seg={c.seguimento}>
+        <div 
+          class="card-project" 
+          data-nome={c.nome} 
+          data-regiao={c.regiao} 
+          data-seg={c.seguimento}
+          data-ameaca={c.ameaca}
+        >
           <div class="card-head">
             <div class="icon-box">{c.nome.charAt(0).toUpperCase()}</div>
             <span class={`threat-badge ${getThreatColor(c.ameaca)}`}>{c.ameaca || 'BAIXA'}</span>
@@ -226,14 +226,16 @@ function formatMoeda(val: number) {
   </div>
 
   <style>
-    /* ... (TODO O CSS ANTERIOR MANTIDO) ... */
+    /* CSS GERAL */
     .page-intro { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .page-intro h1 { font-size: 1.8rem; color: #1A202C; font-weight: 800; }
     .btn-add { background: #1E293B; color: white; padding: 0.8rem 1.5rem; border-radius: 30px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
     
+    /* GRIDS */
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
     .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
     
-    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+    /* CARDS STATS */
     .stat-card { padding: 1.5rem; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; height: 150px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
     .card-green { background: linear-gradient(135deg, #00BA88 0%, #008F68 100%); }
     .card-blue { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); }
@@ -244,17 +246,21 @@ function formatMoeda(val: number) {
     .stat-footer { font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; margin-top: auto; opacity: 0.9; }
     .badge { background: rgba(255,255,255,0.25); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; }
 
+    /* TOOLBAR */
     .toolbar { background: white; padding: 1.2rem; border-radius: 16px; margin-bottom: 2rem; display: flex; gap: 1.5rem; flex-wrap: wrap; border: 1px solid #E2E8F0; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
     .filter-group { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 0.4rem; }
     .filter-group label { font-size: 0.75rem; font-weight: 700; color: #718096; text-transform: uppercase; }
     .control-input { padding: 0.7rem; border: 1px solid #CBD5E1; border-radius: 10px; background: #F8FAFC; width: 100%; font-family: 'Inter', sans-serif; color: #2D3748; font-size: 0.9rem; }
 
+    /* CARD CONCORRENTE */
     .card-project { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid transparent; display: flex; flex-direction: column; transition: transform 0.2s; }
     .card-project:hover { transform: translateY(-5px); border-color: #00BA88; box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
     .card-head { display: flex; justify-content: space-between; margin-bottom: 0.8rem; }
     .icon-box { width: 45px; height: 45px; background: #E6FFF6; color: #00BA88; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; }
+    
     .comp-name-btn { background: none; border: none; padding: 0; font-size: 1.15rem; font-weight: 800; color: #1A202C; text-align: left; cursor: pointer; margin: 0.2rem 0; display: flex; align-items: center; transition: 0.2s; font-family: 'Inter', sans-serif; width: 100%; }
     .comp-name-btn:hover { color: #00BA88; }
+
     .location { color: #718096; font-size: 0.85rem; margin-bottom: 1rem; font-weight: 500; }
     .status-badge { background: #F0FDF4; color: #15803D; padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
     .threat-badge { font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; height: fit-content; }
@@ -263,11 +269,13 @@ function formatMoeda(val: number) {
     .metric { display: flex; flex-direction: column; }
     .metric small { font-size: 0.65rem; font-weight: 700; color: #718096; text-transform: uppercase; margin-bottom: 2px; }
     .metric strong { font-size: 0.9rem; color: #1A202C; }
+    
     .actions-grid { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; padding-top: 1.2rem; border-top: 1px solid #F1F5F9; }
     .btn-action { display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem; border-radius: 10px; text-decoration: none; font-size: 0.8rem; font-weight: 700; border: 1px solid transparent; transition: 0.2s; }
     .btn-action.website { background: #EEF2FF; color: #4F46E5; border-color: #C7D2FE; } .btn-action.instagram { background: #FDF2F8; color: #DB2777; border-color: #FBCFE8; } .btn-action.meta { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; } .btn-action.google { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
     .btn-action:hover { transform: translateY(-2px); }
 
+    /* MODAL STYLES */
     .hidden { display: none !important; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; justify-content: center; align-items: center; padding: 1rem; }
     .modal-card { background: white; width: 100%; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; }
@@ -301,25 +309,78 @@ function formatMoeda(val: number) {
   </style>
 
   <script is:inline>
+    // ELEMENTOS
+    const grid = document.getElementById('gridCards');
     const selSegmento = document.getElementById('filterSegmento');
     const selCidade = document.getElementById('filterCidade');
-    const grid = document.getElementById('gridCards');
+    const selSort = document.getElementById('sortOrder');
+    let cards = Array.from(grid.children);
+    const threatWeight = { 'ALTA': 3, 'MEDIA': 2, 'BAIXA': 1, '': 0 };
     
+    // Variável para armazenar o termo de busca
+    let currentSearchTerm = '';
+
+    // Função para normalizar texto (remove acentos e deixa minúsculo)
+    function normalizeText(str) {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    // FUNÇÃO PRINCIPAL DE FILTRO
     function updateGrid() {
-      let cards = Array.from(grid.children);
       const valSeg = selSegmento.value;
       const valCid = selCidade.value;
+      const valSort = selSort.value;
+      const term = normalizeText(currentSearchTerm); // Termo normalizado
+
+      // 1. FILTRAGEM (Combina Dropdowns + Busca)
       cards.forEach(card => {
         const seg = card.dataset.seg;
-        const reg = card.dataset.regiao;
+        const reg = card.dataset.regiao; 
+        const nome = card.dataset.nome; 
+
+        // Filtros Dropdown
         const matchSeg = valSeg === 'todos' || seg === valSeg;
         const matchCid = valCid === 'todos' || reg === valCid;
-        card.style.display = matchSeg && matchCid ? 'flex' : 'none';
+
+        // Filtro de Busca (Verifica Nome, Região ou Segmento)
+        const cardText = normalizeText(`${nome} ${reg} ${seg}`);
+        const matchSearch = term === '' || cardText.includes(term);
+
+        if (matchSeg && matchCid && matchSearch) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
       });
+
+      // 2. ORDENAÇÃO
+      const sortedCards = cards.sort((a, b) => {
+        const nomeA = a.dataset.nome.toLowerCase();
+        const nomeB = b.dataset.nome.toLowerCase();
+        const ameacaA = a.dataset.ameaca.toUpperCase();
+        const ameacaB = b.dataset.ameaca.toUpperCase();
+
+        if (valSort === 'az') return nomeA.localeCompare(nomeB);
+        if (valSort === 'ameaca_desc') return threatWeight[ameacaB] - threatWeight[ameacaA];
+        return 0;
+      });
+
+      // Reanexa ordenado
+      sortedCards.forEach(card => grid.appendChild(card));
     }
+
+    // LISTENERS
     selSegmento.addEventListener('change', updateGrid);
     selCidade.addEventListener('change', updateGrid);
+    selSort.addEventListener('change', updateGrid);
 
+    // ESCUTA O EVENTO DE BUSCA DO LAYOUT
+    window.addEventListener('global-search', (e) => {
+      currentSearchTerm = e.detail;
+      updateGrid();
+    });
+
+    // --- LÓGICA MODAL (MANTIDA) ---
     const modal = document.getElementById('prodModal');
     const closeBtn = document.getElementById('closeProdModal');
     const tableBody = document.getElementById('prodTableBody');
@@ -356,7 +417,6 @@ function formatMoeda(val: number) {
     });
 
     btnAddRow.addEventListener('click', () => createRow());
-
     function closeModal() { modal.classList.add('hidden'); }
     closeBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if(e.target===modal) closeModal(); });
