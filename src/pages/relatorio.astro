@@ -18,12 +18,11 @@ interface Concorrente {
 
 type Contador = Record<string, number>;
 
-// 2. BUSCA DE DADOS (ROBUSTA)
+// 2. BUSCA DE DADOS
 let concorrentes: Concorrente[] = [];
 let erroCarregamento = false;
 
 try {
-  // Monta a URL absoluta para garantir que funcione no Server Side
   const apiUrl = new URL('/api/concorrentes.json', Astro.url);
   const response = await fetch(apiUrl);
   
@@ -31,20 +30,17 @@ try {
     const json = await response.json();
     concorrentes = json.data || [];
   } else {
-    console.error("Erro na resposta da API:", response.status);
     erroCarregamento = true;
   }
 } catch (e) {
-  console.error("Erro ao carregar dados:", e);
   erroCarregamento = true;
 }
 
-// 3. PROCESSAMENTO DE DADOS
+// 3. PROCESSAMENTO
 const total = concorrentes.length;
 const totalAltaAmeaca = concorrentes.filter((c) => c.ameaca === 'ALTA').length;
 const totalComAds = concorrentes.filter((c) => c.meta_ads || c.google_ads).length;
 
-// Agrupamentos
 const porSegmento = concorrentes.reduce((acc: Contador, curr) => {
   const seg = curr.seguimento || 'Não Informado';
   acc[seg] = (acc[seg] || 0) + 1;
@@ -63,16 +59,13 @@ const porRegiaoAll = concorrentes.reduce((acc: Contador, curr) => {
   return acc;
 }, {});
 
-// Top 5 Regiões
 const porRegiao = Object.entries(porRegiaoAll)
   .sort(([, a], [, b]) => (b as number) - (a as number))
   .slice(0, 5)
   .reduce((r: Contador, [k, v]) => ({ ...r, [k]: v as number }), {});
 
-// Lista para a tabela
 const listaAltaAmeaca = concorrentes.filter((c) => c.ameaca === 'ALTA');
 
-// Prepara JSON para o script
 const dadosGraficos = {
   segmentos: { labels: Object.keys(porSegmento), data: Object.values(porSegmento) },
   ameaca: { labels: Object.keys(porAmeaca), data: Object.values(porAmeaca) },
@@ -105,7 +98,7 @@ const dadosGraficos = {
     {total === 0 && (
       <div class="empty-alert">
         <h3>⚠️ Nenhuma empresa encontrada</h3>
-        <p>Cadastre concorrentes na aba "Adicionar" para gerar os gráficos.</p>
+        <p>Cadastre concorrentes para gerar os gráficos.</p>
       </div>
     )}
 
@@ -136,7 +129,6 @@ const dadosGraficos = {
     </div>
 
     <div class="charts-row">
-      
       <div class="chart-card large">
         <h3>Por Segmento</h3>
         <div class="chart-wrapper">
@@ -153,7 +145,6 @@ const dadosGraficos = {
     </div>
 
     <div class="charts-row">
-      
       <div class="chart-card">
         <h3>Top Regiões</h3>
         <div class="chart-wrapper">
@@ -197,164 +188,142 @@ const dadosGraficos = {
   </div>
 
   <style>
-    .report-container { max-width: 100%; margin: 0 auto; padding-bottom: 2rem; }
+    /* Aumentei padding inferior da página */
+    .report-container { max-width: 100%; margin: 0 auto; padding-bottom: 4rem; }
 
-    .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+    /* Margens do Header */
+    .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; flex-wrap: wrap; gap: 1rem; }
     .report-header h1 { margin: 0; font-size: 1.6rem; color: #1A202C; font-weight: 800; }
     .report-header p { margin: 0.2rem 0 0; color: #64748B; font-size: 0.9rem; }
 
-    .header-actions { display: flex; gap: 0.8rem; }
-    .btn-action { padding: 0.7rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; font-size: 0.9rem; }
+    .header-actions { display: flex; gap: 1rem; }
+    .btn-action { padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; font-size: 0.9rem; }
     .btn-export { background: white; border: 1px solid #CBD5E1; color: #1A202C; }
     .btn-export:hover { background: #F8FAFC; border-color: #00BA88; color: #00BA88; }
     .btn-print { background: #1A202C; border: 1px solid #1A202C; color: white; }
     .btn-print:hover { background: #2D3748; }
 
-    .empty-alert { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; text-align: center; }
+    .empty-alert { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 2rem; border-radius: 12px; margin-bottom: 3rem; text-align: center; }
 
-    /* KPIs */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    .kpi-card { background: white; padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1rem; border: 1px solid #E2E8F0; }
-    .kpi-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    /* KPIs com GAP e MARGEM maiores */
+    .kpi-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+      gap: 2rem; /* Aumentado de 1.5 para 2 */
+      margin-bottom: 3rem; /* Aumentado de 2 para 3 */
+    }
+    .kpi-card { background: white; padding: 1.8rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1.2rem; border: 1px solid #E2E8F0; }
+    .kpi-icon { width: 55px; height: 55px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
     .kpi-icon.green { background: #E6FFF6; color: #00BA88; }
     .kpi-icon.red { background: #FEF2F2; color: #EF4444; }
     .kpi-icon.blue { background: #EFF6FF; color: #3B82F6; }
-    .kpi-info span { font-size: 0.75rem; color: #64748B; font-weight: 700; text-transform: uppercase; }
-    .kpi-info strong { font-size: 1.5rem; color: #1A202C; font-weight: 800; line-height: 1.1; }
+    .kpi-info span { font-size: 0.8rem; color: #64748B; font-weight: 700; text-transform: uppercase; }
+    .kpi-info strong { font-size: 1.8rem; color: #1A202C; font-weight: 800; line-height: 1.1; }
 
-    /* CHARTS LAYOUT (FIXED) */
+    /* GRÁFICOS com GAP e MARGEM maiores */
     .charts-row { 
       display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Responsivo automático */
-      gap: 1.5rem; 
-      margin-bottom: 1.5rem; 
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem; /* Mais espaço entre colunas */
+      margin-bottom: 3rem; /* Mais espaço entre linhas */
     }
 
     .chart-card { 
       background: white; 
-      padding: 1.5rem; 
+      padding: 2rem; /* Mais espaço interno */
       border-radius: 16px; 
       border: 1px solid #E2E8F0; 
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
       display: flex; 
       flex-direction: column; 
-      /* Importante para não vazar */
       min-width: 0; 
       width: 100%;
     }
 
-    .chart-card h3 { margin: 0 0 1rem 0; font-size: 0.9rem; color: #4A5568; font-weight: 700; text-transform: uppercase; }
+    .chart-card h3 { margin: 0 0 1.5rem 0; font-size: 1rem; color: #4A5568; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* WRAPPER CRÍTICO PARA O CHART.JS */
     .chart-wrapper { 
       position: relative; 
-      height: 250px; /* Altura fixa evita crescimento infinito */
+      height: 280px; /* Altura um pouco maior */
       width: 100%; 
     }
 
     /* Table */
     .table-card { padding: 0; overflow: hidden; }
-    .card-title { padding: 1.5rem 1.5rem 0.5rem; }
+    .card-title { padding: 1.5rem 1.5rem 0.5rem 1.5rem; }
     .table-responsive { width: 100%; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; min-width: 400px; }
-    th { background: #F8FAFC; color: #64748B; font-weight: 700; text-align: left; padding: 0.8rem 1.5rem; font-size: 0.7rem; text-transform: uppercase; }
-    td { padding: 0.8rem 1.5rem; border-top: 1px solid #F1F5F9; font-size: 0.85rem; color: #2D3748; }
+    th { background: #F8FAFC; color: #64748B; font-weight: 700; text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; }
+    td { padding: 1rem 1.5rem; border-top: 1px solid #F1F5F9; font-size: 0.9rem; color: #2D3748; }
     .fw-bold { font-weight: 600; }
-    .empty-row { text-align: center; color: #94A3B8; padding: 2rem; }
-    .btn-mini { background: #F1F5F9; color: #64748B; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.8rem; }
+    .empty-row { text-align: center; color: #94A3B8; padding: 3rem; }
+    .btn-mini { background: #F1F5F9; color: #64748B; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.9rem; }
     .btn-mini:hover { background: #00BA88; color: white; }
 
-    /* Mobile Adjustments */
     @media(max-width: 600px) {
-      .charts-row { grid-template-columns: 1fr; }
+      .charts-row { grid-template-columns: 1fr; gap: 1.5rem; }
       .mobile-hide { display: none; }
     }
 
-    /* Print Styles */
     @media print {
       :global(aside) { display: none !important; }
       :global(main) { margin: 0 !important; padding: 0 !important; }
       .header-actions, .hide-print { display: none !important; }
-      .report-container { width: 100% !important; max-width: none !important; }
-      .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
-      .charts-row { display: block !important; } /* Empilha na impressão */
-      .chart-card { margin-bottom: 20px; page-break-inside: avoid; }
+      .report-container { width: 100% !important; max-width: none !important; padding: 0 !important; }
+      .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; margin-bottom: 2rem; }
+      .charts-row { display: block !important; }
     }
   </style>
 
   <script define:vars={{ dadosGraficos, concorrentes }}>
-    // Inicializa Chart.js apenas se houver dados
     const hasData = concorrentes.length > 0;
 
     if (hasData) {
       const commonOptions = {
         responsive: true,
-        maintainAspectRatio: false, // Importante para respeitar a altura do wrapper
-        plugins: { legend: { display: false } }
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } } },
+        layout: { padding: 10 }
       };
 
-      // 1. SEGMENTOS
       const ctxSeg = document.getElementById('chartSegmentos');
       if (ctxSeg) {
         new Chart(ctxSeg, {
           type: 'bar',
           data: {
             labels: dadosGraficos.segmentos.labels,
-            datasets: [{
-              label: 'Empresas',
-              data: dadosGraficos.segmentos.data,
-              backgroundColor: '#00BA88',
-              borderRadius: 4
-            }]
+            datasets: [{ label: 'Empresas', data: dadosGraficos.segmentos.data, backgroundColor: '#00BA88', borderRadius: 6, barPercentage: 0.6 }]
           },
-          options: { ...commonOptions, indexAxis: 'y' }
+          options: { ...commonOptions, indexAxis: 'y', scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }
         });
       }
 
-      // 2. AMEAÇA
       const ctxAmeaca = document.getElementById('chartAmeaca');
       if (ctxAmeaca) {
         new Chart(ctxAmeaca, {
           type: 'doughnut',
           data: {
             labels: dadosGraficos.ameaca.labels,
-            datasets: [{
-              data: dadosGraficos.ameaca.data,
-              backgroundColor: ['#EF4444', '#F59E0B', '#10B981'],
-              borderWidth: 0
-            }]
+            datasets: [{ data: dadosGraficos.ameaca.data, backgroundColor: ['#EF4444', '#F59E0B', '#10B981'], borderWidth: 0, hoverOffset: 6 }]
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8 } } }
-          }
+          options: { ...commonOptions, cutout: '75%' }
         });
       }
 
-      // 3. REGIÃO
       const ctxReg = document.getElementById('chartRegiao');
       if (ctxReg) {
         new Chart(ctxReg, {
           type: 'bar',
           data: {
             labels: dadosGraficos.regiao.labels,
-            datasets: [{
-              label: 'Qtd',
-              data: dadosGraficos.regiao.data,
-              backgroundColor: '#3B82F6',
-              borderRadius: 4
-            }]
+            datasets: [{ label: 'Quantidade', data: dadosGraficos.regiao.data, backgroundColor: '#3B82F6', borderRadius: 6, barPercentage: 0.5 }]
           },
-          options: commonOptions
+          options: { ...commonOptions, scales: { y: { beginAtZero: true, grid: { borderDash: [5, 5] } }, x: { grid: { display: false } } } }
         });
       }
     }
 
-    // PRINT & EXPORT
     document.getElementById('btnPrint')?.addEventListener('click', () => window.print());
-
     document.getElementById('btnExport')?.addEventListener('click', () => {
       if (!concorrentes.length) return alert('Sem dados.');
       const headers = ["Nome", "Segmento", "Região", "Site", "Ameaça"];
