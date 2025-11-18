@@ -15,8 +15,8 @@ export async function GET() {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: import.meta.env.GOOGLE_SHEET_ID,
-      // AGORA VAI ATÉ A COLUNA J (Para ler a Ameaça)
-      range: 'Página1!A:J', 
+      // AGORA VAI ATÉ A COLUNA K (Para ler os Produtos)
+      range: 'Página1!A:K', 
     });
 
     const rows = response.data.values;
@@ -25,8 +25,9 @@ export async function GET() {
       return new Response(JSON.stringify({ data: [] }), { status: 200 });
     }
 
-    const data = rows.slice(1).map(row => {
+    const data = rows.slice(1).map((row, index) => {
       return {
+        id_linha: index + 2, // Guardamos o número da linha para poder salvar depois
         seguimento: row[0] || '',
         nome: row[1] || '',
         site: row[2] || '',
@@ -36,7 +37,9 @@ export async function GET() {
         regiao: row[6] || '',
         ticket_medio: row[7] || '',
         pedido_minimo: row[8] || '',
-        ameaca: row[9] || 'BAIXA' // Nova Coluna J (Padrão: Baixa)
+        ameaca: row[9] || 'BAIXA',
+        // Se a célula estiver vazia, retornamos um array vazio '[]'
+        produtos: row[10] ? JSON.parse(row[10]) : [] 
       };
     });
 
